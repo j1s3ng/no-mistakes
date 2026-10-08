@@ -81,6 +81,8 @@ jobs:
         run: |
           no-mistakes prepare 'Check this. no mistakes.' > prepared.json
           no-mistakes retrieve --corpus "$GITHUB_WORKSPACE/docs/corpus.example.json" --query retry --scope project:demo > retrieved.json
+          no-mistakes toolbox list --profile web > toolbox.json
+          no-mistakes toolbox recommend --profile web --available browser > recommendations.json
           python "$GITHUB_WORKSPACE/examples/tool_hooks.py" > tool-hooks.json
           python - <<'PY'
           import json
@@ -96,6 +98,12 @@ jobs:
           assert retrieved["evidence"]
           assert retrieved["verified"] is False
           assert all(item["scope"] == "project:demo" for item in retrieved["evidence"])
+          catalog = json.loads(Path("toolbox.json").read_text())
+          assert any(tool["id"] == "playwright" for tool in catalog["tools"])
+          needs = json.loads(Path("recommendations.json").read_text())["capabilities"]
+          browser = next(item for item in needs if item["capability"] == "browser")
+          assert browser["available"] is True
+          assert browser["optional_mcp_candidates"] == []
           example = json.loads(Path("tool-hooks.json").read_text())
           assert example["retrieval"]["evidence"]
           assert example["retrieval"]["verified"] is False

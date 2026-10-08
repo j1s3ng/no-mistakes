@@ -13,6 +13,42 @@ TRIGGER = re.compile(r"(?<!\S)no mistakes\.?\s*\Z", re.IGNORECASE)
 DELETED_CORRECTION = "deleted-correction"
 
 
+def _tool_document(path):
+    """Bound user-selected proposal/dossier reads and reject ambiguous JSON."""
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Tool document has duplicate keys")
+            result[key] = value
+        return result
+
+    with path.open("rb") as stream:
+        content = stream.read(262_145)
+    if len(content) > 262_144:
+        raise ValueError("Tool document exceeds 256 KiB")
+    try:
+        return json.loads(content.decode("utf-8"), object_pairs_hook=unique_pairs)
+    except RecursionError:
+        raise ValueError("Tool document nesting is too deep") from None
+
+
+def _confirm_tool_proposal(proposal):
+    """Prompt a terminal operator; host approval rules still apply separately."""
+    if not sys.stdin.isatty():
+        raise ValueError("MCP configuration requires an interactive user decision; review the plan and use a terminal or the host's approval UI")
+    print(json.dumps(proposal, indent=2, ensure_ascii=False), file=sys.stderr)
+    print("Writing this native config can cause the host to connect to services or download/run third-party code. No server has been tested by this helper.", file=sys.stderr)
+    phrase = "enable " + proposal["digest"][:12]
+    print("Approve exactly this proposal? Type '" + phrase + "' (anything else declines): ",
+          end="", file=sys.stderr, flush=True)
+    try:
+        answer = input()
+    except EOFError:
+        return False
+    return answer.strip() == phrase
+
+
 def activation(prompt):
     match = TRIGGER.search(prompt)
     return {"active": match is not None,
@@ -239,6 +275,29 @@ def main(argv=None):
     diagnostic = sub.add_parser("doctor", help="Inspect local installation files without changing them")
     diagnostic.add_argument("--host", action="append", choices=tuple(HOSTS), required=True)
     diagnostic.add_argument("--project", type=Path, default=Path.cwd())
+    toolbox = sub.add_parser("toolbox", help="Recommend tools and review optional MCP configuration before approval")
+    tools = toolbox.add_subparsers(dest="toolbox_command", required=True)
+    from .tool_catalog import CAPABILITIES, PROFILES
+    listing = tools.add_parser("list", help="List curated optional MCP recipes")
+    listing.add_argument("--profile", choices=tuple(PROFILES))
+    inspect_tool = tools.add_parser("inspect", help="Show a curated research dossier without enabling or refreshing it")
+    inspect_tool.add_argument("tool", help="Curated tool ID")
+    recommendation = tools.add_parser("recommend", help="Map a task profile to likely capabilities; prefer existing tools")
+    recommendation.add_argument("--profile", choices=tuple(PROFILES), required=True)
+    recommendation.add_argument("--available", choices=tuple(CAPABILITIES), action="append", default=[],
+                                help="Capability actually observed in the host; repeat as needed")
+    plan = tools.add_parser("plan", help="Emit an inert researched proposal; does not install or enable servers")
+    plan.add_argument("--tool", action="append", default=[], help="Curated tool ID; repeat for selected tools")
+    plan.add_argument("--spec", type=Path, action="append", default=[], help="Custom researched tool dossier JSON")
+    plan.add_argument("--host", choices=("codex", "claude", "cursor", "gemini", "copilot-vscode", "copilot-cli", "generic"), required=True)
+    plan.add_argument("--project", type=Path, default=Path.cwd())
+    plan.add_argument("--reason", required=True, help="Minimized task need; omit private history")
+    plan.add_argument("--scope", required=True, help="Requested file/account/network scope; host must enforce it")
+    show = tools.add_parser("show", help="Validate and inspect a saved proposal")
+    show.add_argument("proposal", type=Path)
+    show.add_argument("--config-only", action="store_true", help="Print the inert native snippet for reviewed manual integration")
+    apply = tools.add_parser("apply", help="Ask for approval, then create an absent project MCP config; never overwrite")
+    apply.add_argument("proposal", type=Path)
     prepare = sub.add_parser("prepare", help="Detect suffix in a user prompt; emit a workflow handoff")
     prepare.add_argument("prompt", nargs="?", help="Omit to read plain text from stdin")
     for command in ("remember", "correct"):
@@ -284,6 +343,30 @@ def main(argv=None):
             result = doctor(args.project, args.host)
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 0 if result["ok"] else 1
+        elif args.command == "toolbox":
+            from .tool_catalog import get_tool, list_tools, recommend
+            from .toolbox import apply_proposal, build_proposal, validate_proposal
+            if args.toolbox_command == "list":
+                result = list_tools(args.profile)
+            elif args.toolbox_command == "inspect":
+                result = get_tool(args.tool)
+            elif args.toolbox_command == "recommend":
+                result = recommend(args.profile, args.available)
+            elif args.toolbox_command == "plan":
+                definitions = [get_tool(tool_id) for tool_id in args.tool]
+                definitions.extend(_tool_document(path) for path in args.spec)
+                result = build_proposal(definitions, args.host, args.project, args.reason, args.scope)
+            elif args.toolbox_command == "show":
+                result = validate_proposal(_tool_document(args.proposal))
+                if args.config_only:
+                    if result["config"] is None:
+                        raise ValueError("Generic proposals have no universal native config; use the host's documented setup")
+                    print(result["config"], end="")
+                    return 0
+            else:
+                result = apply_proposal(_tool_document(args.proposal), _confirm_tool_proposal)
+                print(json.dumps(result, indent=2, ensure_ascii=False))
+                return 1 if result["status"] == "declined" else 0
         elif args.command == "prepare":
             result = activation(args.prompt if args.prompt is not None else sys.stdin.read())
             if result["active"]:

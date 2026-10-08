@@ -140,7 +140,8 @@ our employee handbook.
 
 The dependency-free helper handles suffix detection, scoped intent summaries,
 intent/source graph export, retrieval adapters, verification-tool hooks, and local
-installation diagnostics.
+installation diagnostics. The optional toolbox adds researched tool recipes,
+task profiles, reviewable MCP proposals and user-confirmed project configuration.
 
 The host agent supplies the model and chooses the research and execution. The helper
 can retrieve local evidence or call an explicitly configured RAG endpoint; it does
@@ -208,6 +209,45 @@ and load the installed skill as trusted instructions when true.
 The helper detects text lexically. The host must distinguish a real request from
 quoted or embedded text. The helper never executes the prompt. A prompt containing
 only `no mistakes` asks for a task, because “be flawless” is a difficult ticket to size.
+
+## Swiss army clipboard
+
+Common jobs get a small tool profile: coding, web, research, data, documents,
+knowledge retrieval, ops, and design. Existing host tools come first. We have packed
+a can opener, not opened accounts in your name.
+
+```sh
+no-mistakes toolbox recommend --profile web --available browser --available shell
+no-mistakes toolbox list
+no-mistakes toolbox inspect playwright
+```
+
+Curated optional MCP recipes cover Playwright, Context7, GitHub with an initial
+read-only toolset, Brave Search as a fallback, and official OpenAI documentation.
+Servers, browsers and SDKs are separate downloads/services. The base package still
+has zero runtime dependencies. “Standard” is a recommendation, not a permission slip.
+
+```sh
+no-mistakes toolbox plan --tool playwright --host codex --project . \
+  --reason 'Verify the local UI' --scope 'This project and local test page only' > /tmp/tool-plan.json
+no-mistakes toolbox show /tmp/tool-plan.json
+no-mistakes toolbox apply /tmp/tool-plan.json
+```
+
+Plan first, then receive the user's blessing for the exact proposal. The standalone
+CLI asks for its digest before creating an absent native project config; no
+unattended `--yes`, overwritten settings, or automatic package execution. A host may
+start/download the server when it loads that file, so approval precedes configuration.
+Existing configs require a reviewed manual merge. Recipes disclose permissions,
+data flow, costs, research dates and removal steps. Stale research blocks application.
+
+For an extra MCP, research its primary owner docs and use `--spec` with a custom
+dossier. The helper checks the paperwork; the host must inspect the facts and ask
+the user before enabling it. See the [toolbox guide](docs/toolbox.md) for host formats,
+examples, custom-server fields and actual limits. The Swiss army knife is expanding.
+The tiny lawyer remains permanently unfolded.
+The [v0.5.0 review](docs/toolbox-review.md) records the actual tests, a caught
+version-mismatch defect, consent failure checks and untested integration limits.
 
 ## Plug in more receipts
 

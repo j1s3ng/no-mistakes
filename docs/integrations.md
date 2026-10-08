@@ -3,6 +3,10 @@
 Use existing indexes and tools. No Mistakes supplies a small evidence contract and
 adapters, not another model runtime. Runtime dependencies remain empty.
 
+For capability profiles and researched optional MCP setup with a user decision,
+see the [toolbox guide](toolbox.md). It renders native host snippets; normal skill
+installation does not install servers or grant account access.
+
 ## Local retrieval in one command
 
 ```sh

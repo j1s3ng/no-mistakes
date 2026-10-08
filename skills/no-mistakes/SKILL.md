@@ -115,6 +115,9 @@ connectors where appropriate. Search cannot establish a user's intent.
 For RAG, graph/vector search, reranking, or verifier hookups, read
 [tool-hooks.md](references/tool-hooks.md). Prefer existing authorized tools/indexes.
 Retrieval rank, duplicate sources, and model agreement do not establish truth.
+For a missing browser, search, documentation, account, or data capability, read
+[toolbox.md](references/toolbox.md): select a fitting tool, research additions,
+and obtain the user's explicit decision before enabling a new MCP connection.
 Separate facts, deductions, assumptions, and unknowns; preserve contrary evidence.
 Unavailable research leaves affected claims unverified, without fabricated citations.
 
