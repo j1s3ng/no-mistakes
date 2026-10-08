@@ -1,18 +1,23 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "no-mistakes-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Intent-aware, evidence-led workflow for coding agents."
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 dependencies = []
 
 [project.scripts]
 no-mistakes = "no_mistakes.cli:main"
+
+[project.urls]
+Repository = "https://github.com/j1s3ng/no-mistakes"
+Issues = "https://github.com/j1s3ng/no-mistakes/issues"
 
 [tool.setuptools.packages.find]
 include = ["no_mistakes*"]

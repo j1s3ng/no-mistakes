@@ -1,10 +1,39 @@
 {
   "intent": "Fix checkout retries without changing the API",
   "criteria": [
-    {"text": "Retry succeeds without duplicate charges", "status": "unverified", "evidence": "Pending integration check"}
+    {
+      "text": "Retry succeeds without duplicate charges",
+      "status": "unverified",
+      "evidence": "Pending integration check"
+    }
   ],
   "claims": [
-    {"text": "Provider supports idempotency keys", "status": "unverified", "evidence": "Pending primary documentation review"}
+    {
+      "text": "Provider supports idempotency keys",
+      "status": "unverified",
+      "evidence": "Pending primary documentation review"
+    }
   ],
-  "limitations": ["Example only; nothing has been verified"]
+  "limitations": [
+    "Example only; nothing has been verified"
+  ],
+  "final_review": {
+    "artifact": "Pending: identify the finished artifact/version after the last substantive change",
+    "goal_alignment": {
+      "status": "unverified",
+      "evidence": "Pending comparison of the final checkout behavior with the original goal and latest constraints"
+    },
+    "system_fit": {
+      "status": "unverified",
+      "evidence": "Pending end-to-end inspection of checkout, provider integration, configuration, and documentation"
+    },
+    "side_effects": {
+      "status": "unverified",
+      "evidence": "Pending duplicate-charge, failure-path, and privacy regression checks"
+    }
+  },
+  "iteration_summary": {
+    "passes": 1,
+    "stop_reason": "needs_input"
+  }
 }

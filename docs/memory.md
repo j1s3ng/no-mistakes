@@ -1,8 +1,9 @@
 # Memory semantics
 
 Storage defaults to `.no-mistakes/memory.json` in the working directory. Override
-with `--memory-dir PATH` before the subcommand. No background collection, telemetry,
-network access, or cross-project discovery occurs.
+with `--memory-dir PATH` before the subcommand. Memory commands run locally with
+no network access, background collection, telemetry, or cross-project discovery.
+The separate opt-in retrieval adapters are documented in [integrations.md](integrations.md).
 
 Records contain an ID, summary, source reference, scope, kind (`explicit`,
 `confirmed`, `inferred`), and UTC creation time. Provenance labels are caller-provided,
@@ -24,3 +25,9 @@ Retain only authorized minimal summaries. Never store secrets, raw private
 transcripts, sensitive traits, or unrelated third-party information. Never publish
 memory or include it in search queries. Git ignores the default path; custom paths
 need their own ignore/access configuration.
+
+Sanitize summaries and provenance fields before storing them: names, email addresses,
+identifying URLs, and account IDs can appear in source labels and scopes as well as
+summary text. Prefer non-identifying references and minimal scoped summaries. The
+helper does not automatically redact PII. Review private graph exports before any
+authorized sharing; they include sources and superseded history.

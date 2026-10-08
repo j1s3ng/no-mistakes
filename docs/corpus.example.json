@@ -1,0 +1,20 @@
+[
+  {
+    "id": "retry-policy-1",
+    "text": "In this fictional demo, each checkout retry must reuse the original idempotency key to avoid duplicate charges.",
+    "source": "demo:checkout-policy#retries",
+    "scope": "project:demo"
+  },
+  {
+    "id": "api-policy-1",
+    "text": "In this fictional demo, preserve the checkout public API when fixing retry behavior.",
+    "source": "demo:checkout-policy#api",
+    "scope": "project:demo"
+  },
+  {
+    "id": "different-project-1",
+    "text": "This other project's retry policy must never appear in project:demo results.",
+    "source": "demo:other-project#retries",
+    "scope": "project:other"
+  }
+]
