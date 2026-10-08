@@ -10,6 +10,7 @@ import tempfile
 import uuid
 
 TRIGGER = re.compile(r"(?<!\S)no mistakes\.?\s*\Z", re.IGNORECASE)
+DELETED_CORRECTION = "deleted-correction"
 
 
 def activation(prompt):
@@ -40,6 +41,39 @@ def read_memory(root):
         for field in ("supersedes", "superseded_by"):
             if field in entry and (not isinstance(entry[field], str) or not entry[field].strip()):
                 raise ValueError(f"Memory entry has an invalid {field}")
+
+    by_id = {entry["id"]: entry for entry in data}
+    for entry in data:
+        for field, reciprocal in (("supersedes", "superseded_by"),
+                                  ("superseded_by", "supersedes")):
+            # This established successor marker means inactive deleted history,
+            # even when a separately stored record happens to use the same ID.
+            if field == "superseded_by" and entry.get(field) == DELETED_CORRECTION:
+                continue
+            target = by_id.get(entry.get(field))
+            # Missing references can record deleted history. Never repair them or
+            # reactivate an entry whose correction has been forgotten.
+            if target is None:
+                continue
+            if target["id"] == entry["id"]:
+                raise ValueError("Memory correction links must not reference the same entry")
+            if target["scope"] != entry["scope"]:
+                raise ValueError("Memory correction links must remain in the same scope")
+            if target.get(reciprocal) != entry["id"]:
+                raise ValueError("Memory correction links must be reciprocal")
+
+    checked = set()
+    for entry_id in by_id:
+        trail = set()
+        current = entry_id
+        # Each present entry is visited once across completed traversals; a
+        # repeated entry in the current traversal identifies a cycle.
+        while current in by_id and current not in checked:
+            if current in trail:
+                raise ValueError("Memory correction links must not form a cycle")
+            trail.add(current)
+            current = by_id[current].get("supersedes")
+        checked.update(trail)
     return data
 
 
@@ -202,6 +236,9 @@ def main(argv=None):
     setup.add_argument("--host", action="append", choices=tuple(HOSTS), required=True)
     setup.add_argument("--project", type=Path, default=Path.cwd())
     setup.add_argument("--dry-run", action="store_true", help="Preview changes without writing files")
+    diagnostic = sub.add_parser("doctor", help="Inspect local installation files without changing them")
+    diagnostic.add_argument("--host", action="append", choices=tuple(HOSTS), required=True)
+    diagnostic.add_argument("--project", type=Path, default=Path.cwd())
     prepare = sub.add_parser("prepare", help="Detect suffix in a user prompt; emit a workflow handoff")
     prepare.add_argument("prompt", nargs="?", help="Omit to read plain text from stdin")
     for command in ("remember", "correct"):
@@ -242,6 +279,11 @@ def main(argv=None):
         if args.command == "install":
             from .hosts import install
             result = install(args.project, args.host, dry_run=args.dry_run)
+        elif args.command == "doctor":
+            from .diagnostics import doctor
+            result = doctor(args.project, args.host)
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            return 0 if result["ok"] else 1
         elif args.command == "prepare":
             result = activation(args.prompt if args.prompt is not None else sys.stdin.read())
             if result["active"]:
@@ -276,7 +318,7 @@ def main(argv=None):
                     if entry.get(field) == args.id:
                         # Do not resurrect an obsolete entry when deleting a correction.
                         if field == "superseded_by":
-                            entry[field] = "deleted-correction"
+                            entry[field] = DELETED_CORRECTION
                         else:
                             del entry[field]
             write_memory(root, entries)

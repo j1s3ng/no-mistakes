@@ -1,0 +1,132 @@
+{
+  "intent": "Establish release readiness against the exact public v0.3.1 incumbent under conditional user authorization: publish demonstrated improvements after release checks; otherwise continue scoped iteration.",
+  "artifact_state": "Prepublication v0.4.0 release-readiness snapshot at cumulative pass twenty. Comparison and local release checks passed; normal publication is authorized by the latest user condition. Actual publication and subsequent CI are recorded by the resulting GitHub commit/run. Earlier publishing holds remain preserved historical snapshots.",
+  "reviewed_on": "2026-10-08",
+  "previous_review": "docs/test-audit-review.report.json",
+  "comparison": "docs/release-comparison.results.json",
+  "criteria": [
+    {
+      "text": "Demonstrate a concrete improvement against the exact incumbent using fixed comparable checks.",
+      "status": "passed",
+      "evidence": "30 identical shared-API criteria:7 improvements,23 satisfied ties,0 observed regressions. Same final reusable script on both matches original independent observations. New-only keyword APIs excluded."
+    },
+    {
+      "text": "Preserve tested incumbent behavior and installation upgrade contracts.",
+      "status": "passed",
+      "evidence": "All115 untouched incumbent tests pass on both exact baseline and candidate implementation overlay; old tests/docs/skills byte-identical.59 real CLI subprocesses pass seven normal upgrades,five conflict cases and four subset/retired-file cases across six host profiles."
+    },
+    {
+      "text": "Run the actual candidate tests and verify the final packaged entrypoints.",
+      "status": "passed",
+      "evidence": "Actual candidate suite ran159 tests and passed. Modern offline source/wheel build passed; separate installed environment outside checkout passes real retrieve CLI, canonical serialization/provenance, required-check gaps, bounded summaries, memory/deletion-marker regressions, six profiles, exact skill bytes, idempotence and aggregate/read-only diagnostics. Every required source file and helper/skill wheel file matches source; private/cache data excluded and runtime dependencies empty."
+    },
+    {
+      "text": "Preserve truthful limitations, historical records, privacy and user publication constraints.",
+      "status": "passed",
+      "evidence": "Independent final read-only review plus root inspection confirm fixed comparison expectations, truthful bounded claims, intentional default-limit disclosure, historical hold framing and no machine paths/private history in release evidence.53 local Markdown targets, two small-text disclaimers, skill validation, Python3.10 grammar checks and git diff whitespace checks pass. Remote main was rechecked as22bb044 before publication preparation; normal non-force push is the only authorized publication path."
+    }
+  ],
+  "claims": [
+    {
+      "text": "The candidate improves specific helper reliability behaviors; this is not a measured model quality gain.",
+      "status": "verified",
+      "evidence": "Canonical retrieval/verifier serialization, four memory-link validations and bounded diagnostic retention improve identical deterministic probes.23 fixed controls and115 untouched incumbent tests pass; no statistical model comparison."
+    }
+  ],
+  "release_gate": {
+    "incumbent_commit": "22bb044f683006ae729740e47e50ad79619b2068",
+    "candidate_version": "0.4.0",
+    "remote_main_verified": "22bb044f683006ae729740e47e50ad79619b2068",
+    "candidate_unit_tests": 159,
+    "distribution_checks": "passed",
+    "github_hosted_ci": "not_run_at_this_prepublication_snapshot",
+    "publication": "authorized_for_normal_commit_and_push_after_local_gates",
+    "runtime_dependencies": 0,
+    "local_markdown_links": 53,
+    "small_text_disclaimers": 2,
+    "skill_validation": "passed",
+    "installed_import_origin": "outside_checkout",
+    "source_and_wheel_bytes": "match",
+    "incumbent_untouched_tests": 115,
+    "paired_criteria": 30
+  },
+  "intentional_changes": [
+    "Default verifier limits:50 checkers,50 refs/result,1024 metadata characters,2000 summary characters and8000 total summary characters. Configurable; checker over-capacity rejected before callbacks. Not blanket backward compatibility.",
+    "Inconsistent present correction relationships rejected. Missing deleted-history references remain accepted."
+  ],
+  "limitations": [
+    "No promises or guarantees; best effort only.",
+    "Synthetic helper checks do not establish general model accuracy, intent prediction or native host discovery.",
+    "Callbacks remain trusted code; retained-output bounds do not sandbox execution, allocations or runtime, redact all PII or prove injection resistance.",
+    "HTTP transport tests use mocks. Upgrade inventories observe persistent effects, not every transient write or syscall.",
+    "Remote GitHub CI executes after publication; this snapshot cannot claim its future result."
+  ],
+  "final_review": {
+    "artifact": "Final v0.4.0 source, canonical skill, tests, README and comparison evidence identified by hashes; source/wheel distributions and separate installed entrypoints. This record covers prepublication readiness, not a future CI result.",
+    "goal_alignment": {
+      "status": "passed",
+      "evidence": "Demonstrated seven bounded helper improvements against the exact incumbent, retained23 fixed controls and115 untouched incumbent tests, and satisfied conditional publication readiness. No unmeasured model-effectiveness or zero-mistakes promise; remaining native-host/behavior gaps stay explicit."
+    },
+    "system_fit": {
+      "status": "passed",
+      "evidence": "Reviewed final public entrypoints, verifier limits, malformed-memory behavior, six host upgrade contracts, diagnostics, source/wheel contents, actual candidate159-test run, fixed shared-API reproducer and release/historical documentation together. Independent reviews verified claim fairness and CI portability; installed checks exercise the built package outside checkout."
+    },
+    "side_effects": {
+      "status": "passed",
+      "evidence": "No runtime dependencies, private history, raw transcripts, new access permissions or model authority added. Canonical output changes and default verifier capacities are intentional and disclosed. Synthetic fixtures and isolated environments preserved live user files; upgrades preserve custom/unowned bytes and conflict before persistent writes. Latest conditional publication authorization replaces the earlier hold only after these local gates pass."
+    }
+  },
+  "iteration_summary": {
+    "passes": 20,
+    "stop_reason": "complete",
+    "continuations": [
+      {
+        "additional_passes": 10,
+        "approval": "explicit user session-continuation authorization, 2026-10-08"
+      }
+    ]
+  },
+  "loop_ledger": [
+    {
+      "pass": 19,
+      "gap": "Establish a fixed incumbent comparison and migration evidence before deciding publication.",
+      "result": "Three independent reviews plus root reproductions establish bounded improvements, unchanged controls, untouched test compatibility and real upgrades. New verifier limits identified as intentional behavior changes."
+    },
+    {
+      "pass": 20,
+      "gap": "Make comparison reviewable and verify final release before normal publication.",
+      "result": "Reusable probe reproduces original observations exactly after a caught/fixed CLI argument-variable collision. Actual159 tests, final installed/package checks, source hashes,53 local Markdown links, skill validation and final independent/root whole-artifact review pass. Ready for normal publication; remote CI result belongs to the resulting commit."
+    }
+  ],
+  "artifact_sha256": {
+    "no_mistakes/__init__.py": "c2b8541b3bf0b3b4bb63b0e7f3619b53ead8c0dd9a09bc302403d5a645e3f8c6",
+    "no_mistakes/__main__.py": "7afeadd4522552160b4980dc798d62c6351e23026023c4dc3f40ef0a286a8f3d",
+    "no_mistakes/cli.py": "eddaa055db44a6638762ef0fe0a370845d0a2692c3e0d50d85a99553845da1e1",
+    "no_mistakes/diagnostics.py": "6016cacacfd8f9febb44ac7646a53efe58d3236bcdbf6eec18128c8c07971f86",
+    "no_mistakes/hosts.py": "06011493e6701d4df9517fa471e6cbf6925df25c32dba904264cd1497d1c372f",
+    "no_mistakes/http_adapter.py": "cdd4d6a0121384e3a02ba1ee4223f6851cb093a5a43148cf908bb3993fc0dae5",
+    "no_mistakes/integrations.py": "f001875e717a1024cd840e0dbed4f103d128b78e032ba8dfa925390ec7e29421",
+    "skills/no-mistakes/SKILL.md": "f83bd78547f8d6f1e387365c2a7a258ce695092a21a64be200a117a3b963ca2e",
+    "skills/no-mistakes/references/adaptive-flow.md": "0d8cc45ab26f85ade70015aebb5bee3058b1702d407d4042d45cc1a653a4d210",
+    "skills/no-mistakes/references/context-and-privacy.md": "545e43a0c1241ba198a3d26005afd081d08ec2b06ea96a2847440da391e41549",
+    "skills/no-mistakes/references/parallel-work.md": "b13c765e0f255b39ba8012b10db37a20cfe1b9d6e1a69d537a7477ef1d153ed3",
+    "skills/no-mistakes/references/task-contracts.md": "09ad338e3e2e0559ff679f8b3f1ecf98fb3ec184a000fd47edc744aedad65fb5",
+    "skills/no-mistakes/references/tool-hooks.md": "e318e0f4dcfcf4a458a53888fcfeba2e8574bcbc34f7f35717aad0f97d207576",
+    "skills/no-mistakes/references/web-research.md": "12f758b604d2e7b520a1ec8d56689d4805786b9e1ae1330650a933e0edbc0383",
+    "tests/test_context_budget.py": "c18e6657a87c836490b39a1b1e77212baf746e8dece7fe3863642d8a635ed7b8",
+    "tests/test_diagnostics.py": "cecf21eda2c9702ebdc9ecb1104e537a1efa1d53f4a54228e362470960d01cdc",
+    "tests/test_diagnostics_cli.py": "3008fa774193cfbde3a845130744dbabd223fc554dcdb9e5cc8b3877a1c5f8f4",
+    "tests/test_hosts.py": "f087bb00ed8b038b580a9f0a6f7ec0af02b0b4e1c52df6871ca5358ff231c007",
+    "tests/test_http_adapter.py": "05e3f87e18664035a68a668e8564b2f975d1fa8e74e3a5eaed28d2569844d65c",
+    "tests/test_integrations.py": "89a5322782361b6bffd6e38d4ae6d12e636fed66f87f1a0deaa9282ace4ddc23",
+    "tests/test_retrieval_cli.py": "cddd60396362fcb9c6be21d8d5d6ca041c1723038f09739f568e7f782dac823c",
+    "tests/test_workflow.py": "f3d63610fb2d1bf1024ae5552b14e3ab778e861e1e96b78d8da358a50b0b256b",
+    "README.md": "9abd00f763170ef5889ba4fa49cb8ed774a29cdac2493eae6cd815034e106860",
+    ".github/workflows/test.yml": "89909261acd287ab480fa91e7f5910cbc225dff472103c5700f75680a180cbad",
+    "pyproject.toml": "7a51717ce45b5f14de152b22a2b6b62b2c1b4e9c6c665ed8b8e67e0acaaaccc2",
+    "MANIFEST.in": "fcb7abdc58241e99821887858adc9ec5287d8eaea8294541bca1426d43074a1e",
+    "examples/compare_snapshot.py": "73316f320dd52e93108cc341f1c9161ecdd1a7699fed566ba695432f8314dc53",
+    "docs/release-comparison.md": "c69c07c66d4bc5fa7bee87496f8e341f5a4e18c30ab05dfc13e1f41db86be997",
+    "docs/release-comparison.results.json": "87a7c80ea4229817ee5822c5bce52b06d1b6d49ecc6f130d2a1b655c8deeb266"
+  }
+}

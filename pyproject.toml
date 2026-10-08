@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "no-mistakes-agent"
-version = "0.3.1"
+version = "0.4.0"
 description = "Intent-aware, evidence-led workflow for coding agents."
 requires-python = ">=3.10"
 license = "MIT"

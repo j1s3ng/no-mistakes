@@ -208,6 +208,36 @@ class ContextBudgetTests(unittest.TestCase):
         self.assertNotIn('trust', result['evidence'][0])
         self.assertNotIn('verified', result['evidence'][0])
 
+    def test_external_sanitization_preserves_candidate_cap(self):
+        calls = []
+        provider = CallableRetriever('remote', lambda request: calls.append(request) or [
+            self.evidence('fact')])
+        result = retrieve(RetrievalRequest('private question', 's', 10), [provider],
+                          sanitize_query=lambda query: 'reviewed question',
+                          budget=ContextBudget(max_candidates_per_provider=3))
+        self.assertEqual(calls, [RetrievalRequest('reviewed question', 's', 3)])
+        self.assertEqual([item['text'] for item in result['evidence']], ['fact'])
+        self.assertIn('candidate_limit', self.reasons(result, 'remote'))
+
+    def test_custom_serializer_cannot_expand_text_or_replace_provenance(self):
+        class CustomEvidence(Evidence):
+            def to_dict(self):
+                return {**super().to_dict(), 'text': 'expanded' * 4000,
+                        'id': 'forged-id', 'source': 'forged-source',
+                        'scope': 'other-scope', 'provider': 'forged-provider'}
+
+        supplied = CustomEvidence('original-id', 'fact with qualifier', 'original-source', 's')
+        result = retrieve(self.request(), [self.provider([supplied])],
+                          budget=ContextBudget(max_excerpt_chars=4, max_text_chars=4))
+        self.assertEqual(result['evidence'], [{
+            'id': 'original-id', 'text': 'fact', 'source': 'original-source',
+            'scope': 's', 'provider': 'p', 'score': None,
+            'original_chars': len('fact with qualifier'), 'truncated': True,
+        }])
+        self.assertEqual(sum(len(item['text']) for item in result['evidence']),
+                         result['context_budget']['retained_text_chars'])
+        self.assertEqual(Evidence.from_dict(result['evidence'][0]).text, 'fact')
+
     def test_oversized_metadata_is_rejected_without_truncating_provenance(self):
         for field in ('id', 'source', 'scope', 'provider'):
             with self.subTest(field=field):

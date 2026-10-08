@@ -63,6 +63,13 @@ Wait for the answer before resuming the stalled flow. Keep the pass count and
 permissions; an answer does not silently reset an exhausted budget. If the current
 allowance was reached, request explicit continuation as described below.
 
+When recovery is authorized, identify the smallest observed failure, expected
+versus actual behavior, and the last useful evidence. Distinguish an implementation
+fault from missing input, unavailable capability, or failed evidence capture.
+State verified causes separately from hypotheses. Choose a bounded recovery that
+changes the failing condition and verify its result; repeating an unchanged request
+is not diagnosis. Continuation permission cannot supply missing facts or access.
+
 Stop when the final review and criteria pass. Also stop when progress needs user
 input, context/resources are insufficient, or the current pass allowance is used. Mark
 unfinished work incomplete and state the actual gap; exhausting the budget is not

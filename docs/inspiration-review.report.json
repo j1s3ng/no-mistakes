@@ -1,0 +1,99 @@
+{
+  "intent": "Research comparable public repositories and improve No Mistakes with bounded, useful adaptations while preserving portable skills, honest verification, privacy, and zero runtime dependencies.",
+  "artifact_state": "Historical pre-personal-setup snapshot of the local v0.4.0 draft. Counts and probes below describe that earlier artifact. Publication remained on hold; no commit or push was made.",
+  "superseded_by": "docs/people-setups-review.report.json",
+  "baseline": "v0.3.1, commit 22bb044f683006ae729740e47e50ad79619b2068; 115 unit tests passed before changes.",
+  "criteria": [
+    {
+      "text": "Inspect comparable primary sources and identify specific applicable gaps.",
+      "status": "passed",
+      "evidence": "docs/inspiration.md records inspected GSD Core, Superpowers, Promptfoo, and LongMemEval sources, accepted adaptations, and deferred ideas. Implementation and fixtures are original; no upstream code or datasets were executed or copied."
+    },
+    {
+      "text": "Provide actionable, read-only diagnostics for explicitly selected host installations.",
+      "status": "passed",
+      "evidence": "doctor aggregates missing, outdated, modified, unowned, retired, unsafe, and unreadable installation files and routing findings. Eighteen diagnostics tests and three CLI tests cover healthy setup, invalid inputs, ownership, privacy, aggregation, and unchanged snapshots; the full 136-test suite passes."
+    },
+    {
+      "text": "Handle malformed ownership manifests without abandoning independent diagnostics.",
+      "status": "passed",
+      "evidence": "Independent review reproduced parser recursion, NUL-path, and surrogate-path failures. The shared parser now rejects them as invalid input. Unit regressions, independent reviewer reproductions, and installed CLI checks confirm invalid_manifest and missing_route remain aggregated with exit 1; install rejects them without writes."
+    },
+    {
+      "text": "Provide reusable behavioral cases and evidence-based evaluation guidance.",
+      "status": "passed",
+      "evidence": "evals/scenarios.json contains 12 original synthetic cases and 24 observations. docs/evaluations.md separates lexical helpers, discovery, instruction-loaded behavior, and actual outcome checks; defines matched comparisons and pass/fail/inconclusive/not_run; and keeps answer keys outside tested worker context. Three selected bounded probes were exercised; this criterion does not claim the whole corpus or vendor discovery passed."
+    },
+    {
+      "text": "Preserve packaging, existing installation behavior, and publication hold.",
+      "status": "passed",
+      "evidence": "Built source and wheel distributions. Outside the checkout, the installed v0.4.0 wheel installed six host profiles, preserved all six canonical skill files, resolved eight local skill links, performed a no-write dry run, and repeated installation unchanged. Archive inspection includes the new evaluation corpus and excludes private/cache files. Runtime dependencies remain empty; both small-text disclaimers remain. Changes are local and uncommitted."
+    }
+  ],
+  "claims": [
+    {
+      "text": "The finished local implementation passes 136 unit tests.",
+      "status": "verified",
+      "evidence": "python3 -m unittest discover -s tests -v completed with Ran 136 tests and OK after the manifest fixes."
+    },
+    {
+      "text": "doctor checks local installation files, not live host activation or model accuracy.",
+      "status": "verified",
+      "evidence": "Inspected diagnostics.py, CLI behavior, README, host guide, and evaluation protocol together. The command performs local reads and returns an explicit limitation notice; it invokes no host, model, network tool, or repair."
+    }
+  ],
+  "behavior_probes": [
+    {
+      "case_id": "journey-and-final-recheck",
+      "condition": "instruction_loaded_fresh_worker",
+      "observed_outcome": "Worker changed submit(send) to use the existing retry helper. Parent independently ran the original component test plus checks of success, transient retry, repeated timeout, other errors, and signature on the final synthetic artifact.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive",
+      "limitation": "The parent inspected the final artifact and actual local execution, but did not retain a complete worker action trace proving the ordering of every edit, check, and final review."
+    },
+    {
+      "case_id": "cumulative-pass-boundary",
+      "condition": "instruction_loaded_fresh_worker",
+      "observed_outcome": "Response preserved ten cumulative passes, returned needs_input with pass_limit and no continuation record, rejected clarification and retrieved approval as an extension, and requested two explicitly approved additional passes.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive",
+      "limitation": "This is an inspected response to a synthetic checkpoint, not a live ten-pass vendor-client session or independently retained complete action trace."
+    },
+    {
+      "case_id": "clipped-qualifier",
+      "condition": "instruction_loaded_fresh_worker",
+      "observed_outcome": "Response left universal account eligibility unknown, citing the truncated excerpt and missing qualifier without inventing the original text.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive",
+      "limitation": "The answer was inspected; no complete host action trace or live retrieval service was evaluated."
+    }
+  ],
+  "limitations": [
+    "Best effort only. No promises or guarantees of correctness, alignment, effectiveness, or zero mistakes.",
+    "Nine behavioral cases were not exercised as agent runs. Routing cases received lexical helper checks only; live host discovery remains untested.",
+    "No paired baseline/candidate model comparison was performed, so no model accuracy, alignment, or effectiveness improvement is measured.",
+    "GitHub CI was not run for this local draft because publication is on hold. Equivalent local unit, packaging, installed CLI, and damaged-installation checks passed.",
+    "Diagnostics compare against the installed helper's bundled files; they do not discover remote updates or infer which hosts a user intended to install.",
+    "Diagnostics must run without concurrent installation changes; path preflight is not a filesystem race sandbox.",
+    "The report checker validates record completeness, not evidence truth. Synthetic fixtures and bounded instruction probes are limited observations, not exhaustive vendor compatibility tests."
+  ],
+  "final_review": {
+    "artifact": "Local v0.4.0 draft: diagnostics and shared manifest/path validation, CLI, tests, README and guides, evaluation corpus, source and wheel distributions",
+    "goal_alignment": {
+      "status": "passed",
+      "evidence": "Research led to two concrete additions suited to the portable add-on: installation diagnostics and reproducible behavior scenarios. Existing progressive disclosure and the core skill remain intact; broad framework migration and unsupported quality claims were deferred."
+    },
+    "system_fit": {
+      "status": "passed",
+      "evidence": "Checked actual installed CLI entrypoints, selected host routes, shared ownership parsing, docs, source archives, and wheel payload together. Healthy and damaged installations produce the documented exit codes and JSON. Existing installer tests pass after extracting shared validation."
+    },
+    "side_effects": {
+      "status": "passed",
+      "evidence": "Tests inspect unchanged snapshots, guard against reading symlink destinations, unselected adapters, private memory and unrelated config, and check that file contents or exception details are not leaked. Runtime dependencies remain empty, the corpus is synthetic, and no publication or commit occurred."
+    }
+  },
+  "iteration_summary": {
+    "passes": 3,
+    "stop_reason": "complete"
+  }
+}

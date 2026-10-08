@@ -19,8 +19,17 @@ class HostInstallTests(unittest.TestCase):
         self.project.mkdir()
 
     def snapshot(self):
-        return {str(path.relative_to(self.project)): path.read_bytes()
-                for path in self.project.rglob('*') if path.is_file()}
+        entries = {}
+        for path in self.project.rglob('*'):
+            mode = path.lstat().st_mode
+            if stat.S_ISLNK(mode):
+                value = ('symlink', str(path.readlink()))
+            elif stat.S_ISDIR(mode):
+                value = ('directory',)
+            else:
+                value = ('file', path.read_bytes())
+            entries[str(path.relative_to(self.project))] = (stat.S_IMODE(mode), value)
+        return entries
 
     def write(self, relative, content):
         target = self.project / relative
@@ -350,7 +359,8 @@ class HostInstallTests(unittest.TestCase):
         install(self.project, list(HOSTS))
         for relative, content in unrelated.items():
             self.assertEqual((self.project / relative).read_bytes(), content.encode())
-        installed = set(self.snapshot()) - set(unrelated)
+        installed = {relative for relative, (_, value) in self.snapshot().items()
+                     if value[0] == 'file'} - set(unrelated)
         expected = {f'{SKILL_PATH}/{name}' for name in skill_payload()}
         expected.update(set(HOSTS.values()))
         expected.update((MANIFEST_PATH, '.claude/commands/no-mistakes.md'))

@@ -58,6 +58,10 @@ material inferences and check changed conditions. Label predictions as hypothese
 with references; do not infer sensitive traits, diagnoses, or hidden motives.
 Ask when material ambiguity changes the outcome, while continuing independent work.
 
+For unclear success, competing constraints, bug-fix verification, or optimization,
+read [task-contracts.md](references/task-contracts.md) to connect outcomes to checks
+and keep improvement claims tied to comparable evidence.
+
 When relevant authorized memory exists and the helper is available, use `context`
 with a caller-selected scope, for example
 `python -m no_mistakes context --query 'relevant words' --scope 'project:YOUR_PROJECT'`.
@@ -120,8 +124,11 @@ deceptive metrics, or tests changed to hide failures. Do not expand authorizatio
 through predicted intent or publish private memory.
 
 Check each acceptance criterion against the actual result using checks that could
-fail for plausible errors. Inspect cited support for material claims and seek a
-plausible counterexample or missed constraint. Passing tests alone establish neither
+fail for plausible errors. Find applicable project verification commands and their
+prerequisites in instructions, build/test configuration, and relevant docs; distinguish
+quick checks from required integration or release gates. Inspect cited support for
+material claims and seek a plausible counterexample or missed constraint. Confirm
+that intended checks actually executed. Passing tests alone establish neither
 factual truth nor effectiveness. Report actual checks, failures, and remaining gaps.
 
 ## Review the finished whole

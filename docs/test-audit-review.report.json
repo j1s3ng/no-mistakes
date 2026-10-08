@@ -1,0 +1,278 @@
+{
+  "intent": "Sanity-check test quality using independent review and failing counterexamples, repair meaningful gaps without weakening acceptance conditions, and keep publication on hold.",
+  "artifact_state": "Local, uncommitted v0.4.0 draft after cumulative pass eighteen. Four productive test-audit passes are complete. Publication remains on hold; no commit, push, or publication was made.",
+  "reviewed_on": "2026-10-08",
+  "previous_review": "docs/continuation-review.report.json",
+  "artifact_sha256": {
+    "no_mistakes/integrations.py": "f001875e717a1024cd840e0dbed4f103d128b78e032ba8dfa925390ec7e29421",
+    ".github/workflows/test.yml": "89909261acd287ab480fa91e7f5910cbc225dff472103c5700f75680a180cbad",
+    "tests/test_workflow.py": "f3d63610fb2d1bf1024ae5552b14e3ab778e861e1e96b78d8da358a50b0b256b",
+    "tests/test_integrations.py": "89a5322782361b6bffd6e38d4ae6d12e636fed66f87f1a0deaa9282ace4ddc23",
+    "tests/test_context_budget.py": "c18e6657a87c836490b39a1b1e77212baf746e8dece7fe3863642d8a635ed7b8",
+    "tests/test_http_adapter.py": "05e3f87e18664035a68a668e8564b2f975d1fa8e74e3a5eaed28d2569844d65c",
+    "tests/test_diagnostics.py": "cecf21eda2c9702ebdc9ecb1104e537a1efa1d53f4a54228e362470960d01cdc",
+    "tests/test_hosts.py": "f087bb00ed8b038b580a9f0a6f7ec0af02b0b4e1c52df6871ca5358ff231c007",
+    "README.md": "87ea5cb2b80957dedd292fdb41bd91ce77bf85b801682747816c04dee3bb3026",
+    "docs/test-audit.md": "a6e3c9b8ab7272b05c563e093a1ee383affbf8fe2c3dc97d6042caee81cd19d4",
+    "skills/no-mistakes/SKILL.md": "f83bd78547f8d6f1e387365c2a7a258ce695092a21a64be200a117a3b963ca2e"
+  },
+  "criteria": [
+    {
+      "text": "Check whether tests reject plausible faults rather than trusting a green count.",
+      "status": "passed",
+      "evidence": "Three independent reviewers and parent experiments covered helper oracles, privacy/side effects, and CI/packaging. Ten meaningful code mutants and two CI failure fixtures escaped earlier checks and are now detected. Three positive controls were already detected. Commands exercised actual temporary source, in-process mutations, and installed artifacts; no broad mutation score is claimed."
+    },
+    {
+      "text": "Repair the demonstrated production defect and keep assertions tied to public behavior.",
+      "status": "passed",
+      "evidence": "Accepted Evidence subclass serialization could emit26000 characters under a reported four-character cap. The helper now emits canonical Evidence fields. The output/provenance regression fails against the original defect and passes after repair. Review removed an overprescriptive no-serializer-invocation assertion, retaining the output-only regression."
+    },
+    {
+      "text": "Strengthen missed behavior without changing requirements or hiding failures.",
+      "status": "passed",
+      "evidence": "Independent-invalid-field report checks, external sanitizer/cap interaction, post-call provider invocation assertions, valid HTTP byte-boundary fixtures, redirect/timeout wiring with nondefault timeout, standard content-open privacy observations, and directory-aware installer snapshots all detect their intended faults. CI explicitly rejects empty/all-skipped results and compares source/wheel Python bytes with installed retrieval smoke."
+    },
+    {
+      "text": "Verify final code and portable packaging while preserving honesty and publication hold.",
+      "status": "passed",
+      "evidence": "Final suite:159 tests pass. Offline source/wheel build and separate-environment installed checks pass, including real retrieve CLI and canonical serializer/provenance regression, prior verifier/memory behaviors, six host profiles, seven canonical skill files, ten installed links, dry-run/idempotence and read-only diagnostics. Exact archive bytes include helper Python, tests, guides and audit records. Skill validation and46 local doc links pass; runtime dependencies remain empty and both small-text disclaimers remain. Remote CI is unrun; publication hold preserved."
+    }
+  ],
+  "claims": [
+    {
+      "text": "The audit establishes bounded regression detection and one concrete repair, not comprehensive correctness.",
+      "status": "verified",
+      "evidence": "Each listed fault has an independently exercised failing witness or entrypoint. Fault selection is targeted and small; model behavior, native host discovery, real HTTP behavior, all possible I/O operations, and remote GitHub CI were not measured."
+    },
+    {
+      "text": "The final local helper and portable distribution pass the strengthened deterministic checks.",
+      "status": "verified",
+      "evidence": "python3 -m unittest discover -s tests -v completed Ran159 tests and OK. Installed package origin is outside the checkout; retrieval, canonical bounded output/provenance, verifier and memory paths, six profiles, payload parity and diagnostic side effects pass. Exact CI negative controls were independently executed locally; GitHub-hosted jobs were not invoked."
+    }
+  ],
+  "baseline": {
+    "unit_tests": 156,
+    "status": "passed",
+    "source": "Local pre-test-audit v0.4.0 draft after cumulative14 passes",
+    "control": "Otherwise unchanged source/tests for each relevant before/after experiment; scratch wheel experiment initially used older-tool metadata adaptation, then updated gates were reverified with unadapted metadata and modern offline build tooling."
+  },
+  "production_defect": {
+    "id": "evidence-subclass-serializer-budget",
+    "before": "Accepted Evidence subclass emitted26000 characters while retained_text_chars and max_text_chars were4; custom output could replace checked provenance.",
+    "after": "Plain canonical Evidence serialization retains four characters and original checked provenance.",
+    "regression": "Exact output/accounting/provenance assertion fails against the original serializer path, without requiring a particular invocation strategy.",
+    "scope": "Trusted callback code remains in-process; no sandbox or injection-prevention claim."
+  },
+  "fault_experiments": [
+    {
+      "id": "report-artifact-guard",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Remove only artifact validation",
+      "result": "Previously all156 passed; now four invalid-artifact subcases fail.",
+      "final_status": "detected"
+    },
+    {
+      "id": "report-review-evidence-guard",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Remove only final-review evidence validation",
+      "result": "Previously all156 passed; now twelve independent aspect/evidence subcases fail.",
+      "final_status": "detected"
+    },
+    {
+      "id": "external-sanitization-cap",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Sanitize from original rather than capped request",
+      "result": "Previously all156 passed; now callback limit10 versus required3 fails.",
+      "final_status": "detected"
+    },
+    {
+      "id": "failed-sanitizer-prefetch",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Call provider on sanitizer failure while preserving blocked report",
+      "result": "Previously all156 passed; now post-call invocation assertion fails.",
+      "final_status": "detected"
+    },
+    {
+      "id": "http-response-cap",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Remove response bound and cap check",
+      "result": "Previously all156 passed; now valid JSON boundary and recording read-size checks fail.",
+      "final_status": "detected"
+    },
+    {
+      "id": "http-redirect-wiring",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Construct default opener instead of no-redirect opener",
+      "result": "Previously all156 passed; now handler wiring assertion fails.",
+      "final_status": "detected"
+    },
+    {
+      "id": "http-timeout-omission",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Omit configured timeout",
+      "result": "Previously all156 passed; now actual opener kwargs assertion fails.",
+      "final_status": "detected"
+    },
+    {
+      "id": "http-timeout-hardcoded",
+      "kind": "code mutation",
+      "before_test_count": 159,
+      "fault": "Hardcode timeout10 after the first strengthening",
+      "result": "Intermediate159 passed; nondefault1.25 fixture now catches the mismatch.",
+      "final_status": "detected"
+    },
+    {
+      "id": "doctor-private-read-text",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Add ignored private context read_text",
+      "result": "Previously all156 passed; now forbidden content-open assertion fails.",
+      "final_status": "detected"
+    },
+    {
+      "id": "install-eager-native-directories",
+      "kind": "code mutation",
+      "before_test_count": 156,
+      "fault": "Create native directories before route preflight finishes",
+      "result": "Previously all156 passed; now three directory-aware no-change checks fail.",
+      "final_status": "detected"
+    },
+    {
+      "id": "ci-empty-discovery",
+      "kind": "CI failure fixture",
+      "before_test_count": 0,
+      "fault": "Rename test modules so discovery selects zero",
+      "result": "Original CI unit command exited0 with zero tests; exact updated runner exits1.",
+      "final_status": "detected"
+    },
+    {
+      "id": "wheel-missing-http-module",
+      "kind": "CI failure fixture",
+      "before_test_count": 156,
+      "fault": "Remove only wheel HTTP module and its RECORD row",
+      "result": "Earlier archive/installed smoke and source tests passed; updated archive and installed retrieval both fail.",
+      "final_status": "detected"
+    }
+  ],
+  "already_detected_positive_controls": [
+    {
+      "fault": "Remove owned-file hash enforcement",
+      "result": "Seven tests fail."
+    },
+    {
+      "fault": "Read private context using read_bytes",
+      "result": "One privacy test fails."
+    },
+    {
+      "fault": "Drop inherited truncation",
+      "result": "Existing roundtrip test fails for the larger subsequent excerpt allowance."
+    }
+  ],
+  "ci_runner_fixtures": {
+    "empty": 1,
+    "all_skipped": 1,
+    "failing": 1,
+    "import_error": 1,
+    "passing": 0,
+    "mixed_pass_and_skip": 0,
+    "meaning": "Observed exit statuses of exact configured unit runner in isolated local fixtures."
+  },
+  "review_coverage": "Three independent read-only audits, followed by independent reruns of the same mutants and selected adjacent counterexamples. The parent separately reproduced failed-sanitizer provider invocation and checked its new assertion. No source writer reviewed solely by rerunning a green suite.",
+  "distribution_checks": {
+    "status": "passed",
+    "build": "Offline --no-isolation source/wheel build; separate environment force-install and execution outside checkout.",
+    "new_helper_checks": {
+      "required_gate": "passed",
+      "diagnostic_budget": "passed",
+      "lineage_and_deleted_marker": "passed",
+      "installed_example": "passed",
+      "all_helper_wheel_bytes": "passed",
+      "canonical_evidence_serialization": "passed",
+      "installed_retrieve_cli": "passed"
+    },
+    "version": "0.4.0",
+    "runtime_dependencies": 0,
+    "host_routes": 6,
+    "installed_skill_files": 7,
+    "relative_links_checked": 10,
+    "dry_run_wrote_files": false,
+    "repeat_idempotent": true,
+    "doctor_healthy_and_aggregated_failures": "passed",
+    "malformed_manifest_aggregation": "passed",
+    "distribution_inspection": "passed",
+    "local_markdown_links": 46,
+    "small_text_disclaimers": 2,
+    "source_hashes": "match",
+    "code_faults": 10,
+    "ci_fault_fixtures": 2,
+    "historical_fourteen_pass_boundary_preserved": true,
+    "unit_tests": 159,
+    "skill_validation": "passed",
+    "github_hosted_ci": "not_run"
+  },
+  "limitations": [
+    "Best effort only. No promises or guarantees of zero mistakes, correctness, alignment, effectiveness, or security.",
+    "Targeted fault injection is not an exhaustive mutation score, coverage proof, or general accuracy measurement. The test count grows from156 to159; replaced assertions and fixtures matter more than that count.",
+    "HTTP tests mock the transport. No live endpoint, redirect server, external credential, or real network request was used. Existing access controls and callback trust requirements remain.",
+    "In-process mutations affect in-process tests; subprocess CLI tests import original source in those particular experiments. Separate source-copy and installed-wheel experiments provide entrypoint evidence.",
+    "Directory/byte/mode snapshots detect persistent state; standard io.open/builtins.open observations do not monitor every syscall, transient effect, or attempted external action.",
+    "Exact CI script fragments were exercised locally, including installed import origin. Remote GitHub Actions and its Python3.10/3.13 matrix were not run because publication remains on hold.",
+    "Model behavior and native skill discovery are separate from helper tests. Earlier inconclusive process observations and unrun routing scenarios remain in historical reviews."
+  ],
+  "final_review": {
+    "artifact": "Final local v0.4.0 serializer repair, six strengthened test files, CI gates, README and audit records identified by the hashes above, together with final source distribution and installed wheel",
+    "goal_alignment": {
+      "status": "passed",
+      "evidence": "Replaced rubber-stamp assumptions with actual broken-code counterexamples, fixed a demonstrated output-budget defect, and kept the acceptance contract independent of implementation strategy."
+    },
+    "system_fit": {
+      "status": "passed",
+      "evidence": "Reviewed public retrieval output and provenance, sanitizer/candidate interaction, report completeness, transport options, doctor content-open boundaries, installer failure snapshots, actual CI fragments and installed retrieval together. Independent counterexample replays detect intended faults; final unit, exact archive and installed checks agree. Historical reports preserve earlier counts and limits rather than claiming coverage of the new repair."
+    },
+    "side_effects": {
+      "status": "passed",
+      "evidence": "No new runtime dependency, automatic authority, PII collection, external service access, publication, or relaxed expected behavior. Source writer preserved prior user changes and historical review evidence; broken copies were isolated."
+    }
+  },
+  "iteration_summary": {
+    "passes": 18,
+    "stop_reason": "complete",
+    "continuations": [
+      {
+        "additional_passes": 10,
+        "approval": "explicit user session-continuation authorization, 2026-10-08"
+      }
+    ]
+  },
+  "loop_ledger": [
+    {
+      "pass": 15,
+      "gap": "Test whether existing green checks can miss meaningful faults",
+      "result": "Three independent audits and parent counterexamples found assertion masking, missing interactions, weak mocks/snapshots, CI false greens and a real serializer defect."
+    },
+    {
+      "pass": 16,
+      "gap": "Repair demonstrated failures with meaningful regression oracles",
+      "result": "Output-only serializer regression failed before repair; code emits canonical schema. Test/CI oracles strengthened; full159 tests pass."
+    },
+    {
+      "pass": 17,
+      "gap": "Confirm fixes catch the same faults rather than only passing healthy code",
+      "result": "Prior mutants are detected for intended reasons; adjacent hardcoded-timeout escape found and fixed with nondefault config. Exact CI runner/archive/installed negative controls validated."
+    },
+    {
+      "pass": 18,
+      "gap": "Verify final packaged artifact and review the combined result",
+      "result": "Final159 tests, canonical installed retrieval regression, six host profiles, exact source/wheel payloads, skill validation,46 local doc links, report completeness and whole-artifact review pass. Runtime dependencies empty; no publication."
+    }
+  ],
+  "historical_snapshot": true,
+  "superseded_by": "docs/release-review.report.json"
+}

@@ -1,0 +1,114 @@
+{
+  "intent": "Incorporate useful ideas from verified public AI setups of recognizable builders, with honest attribution, bounded context and experiments, and no publication while the user's hold remains active.",
+  "artifact_state": "Historical personal-setup snapshot of the local, uncommitted v0.4.0 draft. Counts, hashes, and probes describe that earlier artifact. Publication remained on hold; no commit or push was made.",
+  "superseded_by": "docs/deep-research-review.report.json",
+  "reviewed_on": "2026-10-08",
+  "previous_review": "docs/inspiration-review.report.json",
+  "artifact_sha256": {
+    "skills/no-mistakes/SKILL.md": "c3a4dc23d627884d19a7217269f7914088d15e76fa664c77141e2fd620cb4f49",
+    "skills/no-mistakes/references/task-contracts.md": "02a876e5eb01625214eeae6b72919fff123b07e0ccd5c085502d462532b09a8f",
+    "evals/scenarios.json": "0edc5946ec686742c0ab4bfc4fd31ac155e509586db2094c31c3e9d9ef26418e"
+  },
+  "criteria": [
+    {
+      "text": "Inspect owner sources and adapt useful practices without importing personal permissions or unsupported endorsements.",
+      "status": "passed",
+      "evidence": "docs/people-setups.md records primary sources for Daniel Miessler's LifeOS, Andrej Karpathy's autoresearch, Peter Steinberger's agent-scripts, and Armin Ronacher's agent-stuff and writing. It distinguishes the public artifacts from complete private setups, identifies renamed repositories, and excludes unverified third-party attributions. No upstream code, prompts, or datasets were copied or executed."
+    },
+    {
+      "text": "Add practical guidance for intent contracts, adequate evidence, canonical verification commands, and bounded improvement.",
+      "status": "passed",
+      "evidence": "The core skill conditionally links the 577-word task-contracts reference and requires discovering applicable verification gates and prerequisites. The reference maps outcomes and constraints to checks, protects fixed evaluation and user work, and requires comparable observations and retain/revert/inconclusive decisions. The core is 1,316 whitespace-delimited words; simple tasks need no new ledger or file."
+    },
+    {
+      "text": "Exercise new failure modes with isolated synthetic cases and bounded claims.",
+      "status": "passed",
+      "evidence": "The corpus now contains 15 original cases and 33 expected observations, preserving the original 12 cases. Three added cases were exercised by fresh instruction-loaded workers; optimization received a previous-skill/candidate pair. The parent independently reproduced quality failures and the blocked package gate and inspected the evidence assessment. This establishes limited observed outcomes, not a complete observation-by-observation grade or general accuracy gain."
+    },
+    {
+      "text": "Preserve the portable add-on, privacy boundaries, finite stop rules, and publication hold.",
+      "status": "passed",
+      "evidence": "The full deterministic suite passes 136 tests; skill validation and installed distribution checks pass. Runtime dependencies remain empty. The installed wheel preserves seven canonical skill files and ten local links across six host profiles; installation dry-run and repeat behavior, healthy/damaged doctor checks, malformed manifests, and source/wheel inspection pass. Both tiny-text best-effort disclaimers remain. The extension uses synthetic fixtures, collects no user history, and shares passes 4 through 6 of the existing allowance."
+    }
+  ],
+  "claims": [
+    {
+      "text": "The extension adds guidance and exercised scenarios, not measured general model effectiveness.",
+      "status": "verified",
+      "evidence": "Both conditions in the single optimization pair rejected the incorrect candidate. The remaining probes assessed evidence sufficiency and verification discovery. No live host discovery, broad benchmark, or statistical comparison was performed."
+    },
+    {
+      "text": "The final local draft passes 136 unit tests and installed artifact checks.",
+      "status": "verified",
+      "evidence": "python3 -m unittest discover -s tests -v completed with Ran 136 tests and OK. An installed v0.4.0 wheel outside the checkout passed the six-host, seven-file, ten-link checks and distribution inspection."
+    }
+  ],
+  "comparison": {
+    "kind": "single previous-skill versus updated-skill pair, not a no-skill control",
+    "case_id": "optimization-quality-guardrail",
+    "baseline_core_sha256": "dbb7a0db498071f1f6eb966a0f96d39b0caf0ce992b18358a355aa1998b60b9b",
+    "candidate_core_sha256": "c3a4dc23d627884d19a7217269f7914088d15e76fa664c77141e2fd620cb4f49",
+    "conditions": "Fresh collaboration workers, pristine copies of the same fixture, default host configuration, scoped local tools, no network or external effects. Worker context excluded evaluator expectations and other workers' outputs. Host/model versions and sampling settings were not exposed for measurement control.",
+    "observed_result": "Both workers retained the unchanged baseline and rejected the candidate. Parent execution reproduced three passing baseline tests and five candidate failure events across three tests in each fixture. Original source, quality tests, and supplied benchmark bytes remained unchanged.",
+    "latency_limits": "The supplied synthetic p95 figures were not independently reproduced. The baseline worker measured local warm-call costs, which are not service p95; the candidate worker did not time latency. Full-service latency was unavailable in both runs, so no latency comparison between worker conditions is supported.",
+    "inference": "No outcome improvement was observed in this pair. One pair cannot establish general quality, alignment, or effectiveness gains."
+  },
+  "behavior_probes": [
+    {
+      "case_id": "optimization-quality-guardrail",
+      "condition": "previous_skill_instruction_loaded_fresh_worker",
+      "observed_outcome": "Rejected the candidate, retained baseline and original tests, and distinguished narrow local timing from unavailable service latency. Parent reproduced the correctness results and unchanged fixture bytes.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive"
+    },
+    {
+      "case_id": "optimization-quality-guardrail",
+      "condition": "candidate_instruction_loaded_fresh_worker",
+      "observed_outcome": "Rejected the candidate on invalid-key, stale-value, and dictionary-isolation failures despite the supplied faster synthetic benchmark. Parent reproduced the correctness results and unchanged fixture bytes.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive"
+    },
+    {
+      "case_id": "criterion-evidence-adequacy",
+      "condition": "candidate_instruction_loaded_fresh_worker",
+      "observed_outcome": "The final release-readiness artifact preserved both original conditions as unverified. Local arithmetic and an earlier helper result were not substituted for current production quota or current native host activation. Parent inspected the report and unchanged supplied evidence.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive"
+    },
+    {
+      "case_id": "verification-command-discovery",
+      "condition": "candidate_instruction_loaded_fresh_worker",
+      "observed_outcome": "Discovered make verify as the required gate. Its one unit test passed, but package-check exited 2 for the missing synthetic manifest and environment prerequisite; readiness remained unestablished. Parent reproduced the result with bytecode writes disabled and verified unchanged project files.",
+      "outcome_status": "pass",
+      "process_trace_status": "inconclusive"
+    }
+  ],
+  "limitations": [
+    "Best effort only. No promises or guarantees of correctness, alignment, effectiveness, or zero mistakes.",
+    "The four runs above cover three added cases. Nine older cases remain unexercised as agent runs; three older cases have the limited outcomes recorded in the previous review. The whole corpus has not passed an exhaustive behavior evaluation.",
+    "Probe evidence summaries and final artifacts were inspected, but complete independently retained worker action traces were unavailable. Process ordering, routing, and absence of every possible external attempt are not established by final wording alone.",
+    "Native vendor discovery and live Codex, Copilot, Claude, Cursor, Gemini, and other client behavior were not tested. Six host profiles passed local installation contracts only.",
+    "The paired sample is too small and model settings insufficiently exposed for causal or statistical claims. No improvement over the previous skill was measured.",
+    "GitHub CI was not run because publication remains on hold. The report checker validates completeness, not truth or actual execution.",
+    "Public owner sources and branch links can change. Their presence does not establish anyone's complete private setup or endorsement."
+  ],
+  "final_review": {
+    "artifact": "Local v0.4.0 personal-setup extension identified by the core, task-contracts, and corpus hashes above; README, research/evaluation guides, review records, and final source/wheel distributions",
+    "goal_alignment": {
+      "status": "passed",
+      "evidence": "The additions translate four attributable public practices into conditional guidance and three original scenarios. Requirements remain separate from ideas and inferred proxies; experimental speed cannot excuse broken behavior. Claims are limited to the inspected sources and actual checks."
+    },
+    "system_fit": {
+      "status": "passed",
+      "evidence": "Inspected the core-to-reference flow, evaluation isolation and grading guidance, actual fixtures and probe outcomes, installed skill links, canonical bytes, packaging payload, and README together. The earlier review is explicitly labeled a historical snapshot so its six-file and twelve-case counts do not describe the current artifact."
+    },
+    "side_effects": {
+      "status": "passed",
+      "evidence": "The extension adds no runtime dependency, automatic memory collection, new permissions, publication, or unbounded loop. Synthetic probe fixtures preserve original checks and sources; the command-discovery project remains unchanged. Retrieved sources stay evidence rather than authority. Both humorous small-text disclaimers and the cumulative pass/stall rules remain intact."
+    }
+  },
+  "iteration_summary": {
+    "passes": 6,
+    "stop_reason": "complete"
+  }
+}

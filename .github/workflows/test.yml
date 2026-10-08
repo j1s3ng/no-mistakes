@@ -14,7 +14,16 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Unit tests
-        run: python -m unittest discover -s tests -v
+        run: |
+          python - <<'PY'
+          import unittest
+
+          suite = unittest.defaultTestLoader.discover("tests")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          if result.testsRun == 0 or len(result.skipped) == result.testsRun:
+              raise SystemExit("No tests executed without skipping")
+          raise SystemExit(0 if result.wasSuccessful() else 1)
+          PY
       - name: Build and inspect distributions
         if: matrix.python == '3.13'
         run: |
@@ -30,7 +39,9 @@ jobs:
               "docs": ("*.md", "*.json"),
               "skills/no-mistakes": ("*.md",),
               "examples": ("*.py",),
+              "evals": ("*.json",),
               "tests": ("*.py",),
+              "no_mistakes": ("*.py",),
           }.items():
               for pattern in patterns:
                   required.update(str(path) for path in Path(directory).rglob(pattern))
@@ -38,9 +49,9 @@ jobs:
               source_files = {str(PurePosixPath(name).relative_to(PurePosixPath(name).parts[0]))
                               for name in archive.getnames()}
               prefix = PurePosixPath(archive.getnames()[0]).parts[0]
-              for source in Path("skills/no-mistakes").rglob("*.md"):
-                  assert archive.extractfile(f"{prefix}/{source}").read() == source.read_bytes(), source
-          assert required <= source_files, f"Missing source files: {required - source_files}"
+              assert required <= source_files, f"Missing source files: {required - source_files}"
+              for source in required:
+                  assert archive.extractfile(f"{prefix}/{source}").read() == Path(source).read_bytes(), source
           with zipfile.ZipFile(next(Path("dist").glob("*.whl"))) as archive:
               wheel_files = set(archive.namelist())
               expected_skill = set()
@@ -49,7 +60,8 @@ jobs:
                   expected_skill.add(bundled)
                   assert archive.read(bundled) == source.read_bytes(), bundled
               assert {name for name in wheel_files if name.startswith("no_mistakes/_skill/")} == expected_skill
-          assert "no_mistakes/cli.py" in wheel_files
+              for source in Path("no_mistakes").rglob("*.py"):
+                  assert archive.read(str(source)) == source.read_bytes(), source
           private_parts = {".no-mistakes", ".git", ".venv", "__pycache__", "build", "dist", ".pytest_cache"}
           for name in source_files | wheel_files:
               parts = PurePosixPath(name).parts
@@ -68,13 +80,22 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: |
           no-mistakes prepare 'Check this. no mistakes.' > prepared.json
+          no-mistakes retrieve --corpus "$GITHUB_WORKSPACE/docs/corpus.example.json" --query retry --scope project:demo > retrieved.json
           python "$GITHUB_WORKSPACE/examples/tool_hooks.py" > tool-hooks.json
           python - <<'PY'
           import json
           from pathlib import Path
+          import os
+          import no_mistakes
+
+          assert not Path(no_mistakes.__file__).resolve().is_relative_to(Path(os.environ["GITHUB_WORKSPACE"]).resolve())
 
           prepared = json.loads(Path("prepared.json").read_text())
           assert prepared["active"] is True
+          retrieved = json.loads(Path("retrieved.json").read_text())
+          assert retrieved["evidence"]
+          assert retrieved["verified"] is False
+          assert all(item["scope"] == "project:demo" for item in retrieved["evidence"])
           example = json.loads(Path("tool-hooks.json").read_text())
           assert example["retrieval"]["evidence"]
           assert example["retrieval"]["verified"] is False
@@ -118,4 +139,31 @@ jobs:
                       assert destination.read_bytes() == item.read_bytes(), destination
 
           compare(bundled, installed)
+          PY
+      - name: Inspect installed setup without changing it
+        working-directory: ${{ runner.temp }}
+        run: |
+          no-mistakes doctor --host codex --host copilot --host claude --host cursor --host gemini --host generic --project installed-smoke > doctor.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          assert json.loads(Path("doctor.json").read_text())["ok"] is True
+          project = Path("installed-smoke")
+          (project / ".agents/skills/no-mistakes/references/web-research.md").unlink()
+          (project / "AGENTS.md").unlink()
+          before = {str(path): path.read_bytes() for path in project.rglob("*") if path.is_file()}
+          result = subprocess.run(
+              ["no-mistakes", "doctor", "--host", "codex", "--project", str(project)],
+              capture_output=True, text=True,
+          )
+          assert result.returncode == 1, result.stderr
+          report = json.loads(result.stdout)
+          assert report["ok"] is False
+          paths = {issue["path"] for issue in report["issues"]}
+          assert "AGENTS.md" in paths
+          assert ".agents/skills/no-mistakes/references/web-research.md" in paths
+          after = {str(path): path.read_bytes() for path in project.rglob("*") if path.is_file()}
+          assert before == after, "Doctor changed the project"
           PY

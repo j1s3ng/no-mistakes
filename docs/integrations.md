@@ -198,7 +198,9 @@ or authority to publish.
 ## Calculators, tests, validators, and second opinions
 
 ```python
-from no_mistakes.integrations import CallableVerifier, VerificationResult, verify
+from no_mistakes.integrations import (
+    CallableVerifier, VerificationBudget, VerificationResult, verify,
+)
 
 def check_acceptance(claim, evidence):
     # Run your authorized, bounded check or inspect its actual result here.
@@ -211,7 +213,11 @@ def check_acceptance(claim, evidence):
 
 checker = CallableVerifier("acceptance-check", check_acceptance)
 # evidence is a sequence of Evidence objects from your retrieval or tool output.
-report = verify("Checkout retries preserve the original payment outcome", evidence, [checker])
+report = verify(
+    "Checkout retries preserve the original payment outcome", evidence, [checker],
+    required_verifiers=("acceptance-check",),
+    budget=VerificationBudget(max_summary_chars=1200, max_total_summary_chars=4000),
+)
 ```
 
 Replace the template with a concrete check: arithmetic recomputation, test results,
@@ -219,7 +225,15 @@ schema validation, citation inspection, or an independent review. The runnable
 [example](../examples/tool_hooks.py) shows local retrieval and an exact integer check.
 Callback results use `passed`, `failed`, or `inconclusive`, a summary, and supporting
 evidence IDs when applicable. Unknown/ambiguous IDs are rejected. A failed check
-keeps the overall verdict failed; missing or errored checks prevent an overall pass.
+keeps the overall verdict failed; errored checks prevent an overall pass.
+Declare mandatory checker names with `required_verifiers`: an absent name adds
+`required_verifier_missing` and prevents an aggregate pass. The helper cannot infer
+which checks your task requires. Omitting the optional declaration preserves the
+existing configured-checks-only behavior; extra configured checks still contribute
+to the aggregate, including failures and inconclusive results.
+Naming a checker does not establish that its intended tests actually executed;
+the callback must inspect real completion and coverage rather than turn exit zero
+or an empty result into a pass.
 An attempted pass that explicitly cites truncated evidence becomes `inconclusive`
 with a `truncated_evidence` gap. Reopen the source and supply complete supporting
 evidence before trying again. Failures remain failures; independent checks with no
@@ -234,6 +248,29 @@ automatic sanitizer. Before a remote checker, minimize/sanitize **both** inputs 
 source metadata for that authorized destination, and wrap its client with your own
 timeout. Never convert a similarity score into `passed`. These hooks can support
 accuracy; improvement still needs task-specific evaluation.
+
+### Bound returned checker diagnostics
+
+`VerificationBudget` defaults to 2,000 Unicode characters per summary, 8,000 summary
+characters in total, 1,024 characters per checker name or evidence ID, 50 configured
+or required check names, and 50 evidence references per result. All limits must be
+positive integers. Configured names/counts, required names/counts, and input evidence
+ID lengths are checked before any callback runs. Oversized references are not
+silently shortened into different citations.
+
+Returned checks record `original_summary_chars` and `summary_truncated`; the envelope
+records retained summary usage and explicit clipping gaps. All check statuses remain
+visible when the summary allowance is exhausted. Diagnostic clipping preserves the
+checker's verdict; it does not qualify evidence or erase a failed check. Inspect gaps
+and reopen the check's original result when the explanation is needed. By contrast,
+an attempted pass citing a clipped *evidence excerpt* remains inconclusive as described
+above. A reference list exceeding the output limit loses its references with an
+explicit gap: a recognized failure remains failed, while a pass becomes inconclusive.
+
+These limits bound returned diagnostics and selected metadata, not callback execution,
+allocations, network responses, model tokens, or the entire JSON envelope's character
+count. Callbacks remain trusted local code with caller-managed access and timeouts.
+Shortening a diagnostic is neither PII redaction nor prompt-injection prevention.
 
 ## Finish with the whole-result review
 

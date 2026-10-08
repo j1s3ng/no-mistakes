@@ -40,6 +40,37 @@ owned files, unowned adapter files, and symlinks below the chosen project root c
 an input error. Installations should run serially. File replacement is atomic per
 file; interruption or filesystem errors can still leave a partially applied setup.
 
+## Check an installation
+
+```sh
+python3 -m no_mistakes doctor --host codex --host claude --project /path/to/project
+```
+
+Use repeatable `--host` flags for the hosts you expect to use. The manifest records
+file ownership, not your intended host list; an explicit selection allows missing
+routes to be detected. This command inspects installations managed by the helper.
+Manual copies can be reported as unowned even when their content matches.
+
+The command reads the expected shared skill and selected host files, aggregates
+findings, and makes no repairs. It reports missing payload/reference files and
+routes, malformed manifests or routing markers, unsafe paths, retired owned files,
+and content that differs from the installed helper's bundled version. Clean owned
+content that differs is reported as outdated; content that also differs from its
+ownership hash requires review for local edits. Unselected native adapters and
+unowned extra files are outside the check. Existing text outside managed routing
+blocks is preserved and does not need to match a template.
+
+JSON output includes `ok`, the requested `hosts`, and `issues` with stable `code`,
+relative `path`, `message`, and suggested `action`. It does not dump file contents
+or read intent memory, credentials, or global settings. Exit `0` means no findings
+in these local checks, `1` means findings, and `2` means invalid input. A malformed
+manifest is a finding, so independent file checks can still run. Review suggested
+actions and `install --dry-run` before changing files; reload the host after setup.
+
+Local file checks cannot establish host discovery, activation, permission policy,
+available MCP tools, or model behavior. Use an explicit invocation and a relevant
+[behavior scenario](evaluations.md) to inspect those separately.
+
 ## Host profiles
 
 Paths below are relative to the target project. These profiles follow the linked

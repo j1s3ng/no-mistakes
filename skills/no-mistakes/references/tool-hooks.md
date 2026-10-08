@@ -6,7 +6,8 @@ explicit HTTP retrieval. A local JSON corpus is a lexical baseline, not semantic
 search or a complete generation pipeline. The host supplies generation.
 
 Python integrations expose `ContextBudget`, `RetrievalRequest`, `Evidence`, `LocalCorpusRetriever`,
-`CallableRetriever`, `retrieve`, `CallableVerifier`, `VerificationResult`, and `verify`.
+`CallableRetriever`, `retrieve`, `CallableVerifier`, `VerificationBudget`,
+`VerificationResult`, and `verify`.
 A retriever callback takes a scoped request and returns Evidence objects. A verifier
 callback takes the claim and selected evidence, returning an explicit verdict,
 summary, and supporting evidence IDs when applicable. Existing SDK clients,
@@ -19,6 +20,13 @@ stable namespaced chunk IDs, source references, and the actual supporting passag
 Open/check the originals for material claims. Backend access control remains required;
 filtering returned scope labels is not tenant authorization. Compare differing source
 versions and conflicts rather than treating duplicate search hits as corroboration.
+
+Diagnose a gap before retrieving again: is support missing for a required claim,
+does a source contradict it, or was useful retrieved support omitted from the answer?
+A relevant passage can contain unrelated unsupported statements. Revise the claim
+when evidence warrants; another search cannot erase contrary evidence. Choose one
+narrow recovery step, such as reopening a missing qualifier or changing the query,
+then inspect whether it supplied new evidence within the shared pass/stall rules.
 
 Mark callbacks external if they can transmit data, including through hosted embedding
 models or rerankers. `CallableRetriever` defaults to external; explicitly mark only
@@ -53,6 +61,12 @@ missing/errored checks as inconclusive. A passing check that relies on clipped
 evidence remains inconclusive until the missing qualification is reviewed.
 Its verdict describes callback outcomes;
 inspect the actual evidence instead of treating the aggregate as a truth guarantee.
+Declare mandatory checker names through `verify(required_verifiers=...)`; absent
+checks then remain explicit gaps. The helper cannot infer the required set or prove
+execution from a checker's name. `VerificationBudget` bounds returned diagnostics,
+check/reference counts, and selected metadata; inspect clipping gaps. Shortened
+checker summaries retain their verdicts, while a pass citing clipped supporting
+evidence stays inconclusive. Neither budget limits callback execution or network use.
 Verifier callbacks have no automatic sanitizer: minimize/sanitize the claim, evidence,
 and source metadata before sending them to a remote checker. Preserve uncertainty
 and report any verification limits introduced by minimization.

@@ -181,7 +181,12 @@ def _retain_excerpts(envelope: dict[str, Any], selected: Sequence[Evidence],
             envelope["gaps"].append({"provider": item.provider, "reason": "empty_excerpt"})
             continue
         truncated = item.truncated or len(text) < len(item.text)
-        envelope["evidence"].append(replace(item, text=text, truncated=truncated).to_dict())
+        # Emit the canonical schema; provider subclasses must not replace bounded
+        # text or checked provenance through an overridden serializer.
+        retained = Evidence(id=item.id, text=text, source=item.source, scope=item.scope,
+                            provider=item.provider, score=item.score,
+                            original_chars=item.original_chars, truncated=truncated)
+        envelope["evidence"].append(retained.to_dict())
         statuses[item.provider]["accepted"] += 1
         usage["retained_text_chars"] += len(text)
         if truncated:
@@ -343,6 +348,28 @@ Verdict = Literal["passed", "failed", "inconclusive"]
 
 
 @dataclass(frozen=True)
+class VerificationBudget:
+    """Bound returned diagnostics, not callback work, allocation, or network use.
+
+    Summary limits count Unicode characters. Names and evidence references are
+    retained exactly or rejected; diagnostic clipping does not change a verdict.
+    These limits do not detect injections or isolate trusted callback code.
+    """
+
+    max_summary_chars: int = 2_000
+    max_total_summary_chars: int = 8_000
+    max_metadata_chars: int = 1_024
+    max_checks: int = 50
+    max_evidence_refs: int = 50
+
+    def __post_init__(self) -> None:
+        for field in ("max_summary_chars", "max_total_summary_chars", "max_metadata_chars",
+                      "max_checks", "max_evidence_refs"):
+            if type(getattr(self, field)) is not int or getattr(self, field) < 1:
+                raise ValueError(f"{field} must be a positive integer")
+
+
+@dataclass(frozen=True)
 class VerificationResult:
     verdict: Verdict
     summary: str
@@ -390,61 +417,138 @@ class CallableVerifier:
 
 
 def verify(claim: str, evidence: Sequence[Evidence],
-           verifiers: Sequence[Verifier]) -> dict[str, Any]:
+           verifiers: Sequence[Verifier], *,
+           required_verifiers: Sequence[str] | None = None,
+           budget: VerificationBudget | None = None) -> dict[str, Any]:
     """Run declared checks; a failed check cannot be outvoted by passes.
 
     Unknown/ambiguous evidence references, passes relying on truncated evidence,
     and checker errors are inconclusive.
-    A passed result describes these callbacks, not a universal accuracy guarantee.
+    A caller can name required checks; absent checkers leave coverage incomplete.
+    The helper does not infer which checks a task requires. A passed result
+    describes these callbacks, not a universal accuracy guarantee.
+    Budgets bound returned summaries, metadata, and check/reference counts, not
+    callback execution or incoming allocations. Clipped diagnostics retain their
+    verdicts; unlike supporting evidence, they do not establish the claim.
     """
     _nonempty(claim, "claim")
+    if budget is None:
+        budget = VerificationBudget()
+    if not isinstance(budget, VerificationBudget):
+        raise ValueError("budget must be a VerificationBudget")
     items = tuple(evidence)
     if any(not isinstance(item, Evidence) for item in items):
         raise ValueError("evidence must contain Evidence objects")
+    if any(len(item.id) > budget.max_metadata_chars for item in items):
+        raise ValueError("verification evidence ID exceeds max_metadata_chars")
     available_ids = {item.id for item in items}
     truncated_ids = {item.id for item in items if item.truncated}
     if len(available_ids) != len(items):
         raise ValueError("verification evidence IDs must be unique")
     checkers = tuple(verifiers)
+    if len(checkers) > budget.max_checks:
+        raise ValueError("verifier count exceeds max_checks")
     names = []
     for checker in checkers:
-        _nonempty(checker.name, "verifier name")
-        if not callable(checker.verify):
+        try:
+            name, callback = checker.name, checker.verify
+        except Exception:
+            raise ValueError("verifiers must declare a name and implement verify") from None
+        _nonempty(name, "verifier name")
+        if len(name) > budget.max_metadata_chars:
+            raise ValueError("verifier name exceeds max_metadata_chars")
+        if not callable(callback):
             raise ValueError("verifiers must implement verify")
-        names.append(checker.name)
+        names.append(name)
     if len(names) != len(set(names)):
         raise ValueError("verifier names must be unique")
+    if required_verifiers is None:
+        required = ()
+    elif (not isinstance(required_verifiers, Sequence)
+          or isinstance(required_verifiers, (str, bytes))):
+        raise ValueError("required_verifiers must be a sequence of names")
+    else:
+        required = tuple(required_verifiers)
+    if len(required) > budget.max_checks:
+        raise ValueError("required verifier count exceeds max_checks")
+    for name in required:
+        _nonempty(name, "required verifier name")
+        if len(name) > budget.max_metadata_chars:
+            raise ValueError("required verifier name exceeds max_metadata_chars")
+    if len(required) != len(set(required)):
+        raise ValueError("required verifier names must be unique")
+    missing = [name for name in required if name not in names]
 
     envelope: dict[str, Any] = {"kind": "verification", "verdict": "inconclusive",
-                               "checks": [], "gaps": []}
-    for checker in checkers:
+                               "checks": [], "gaps": [],
+                               "context_budget": {
+                                   "max_summary_chars": budget.max_summary_chars,
+                                   "max_total_summary_chars": budget.max_total_summary_chars,
+                                   "max_metadata_chars": budget.max_metadata_chars,
+                                   "max_checks": budget.max_checks,
+                                   "max_evidence_refs": budget.max_evidence_refs,
+                                   "retained_summary_chars": 0,
+                                   "truncated_summaries": 0, "omitted_summaries": 0,
+                               }}
+    envelope["gaps"].extend({"verifier": name, "reason": "required_verifier_missing"}
+                            for name in missing)
+    exhausted = False
+    usage = envelope["context_budget"]
+    for checker, name in zip(checkers, names):
         problem = None
         try:
             result = checker.verify(claim, items)
         except Exception:
             problem = "verifier_failed"
         else:
-            if not isinstance(result, VerificationResult):
+            try:
+                if not isinstance(result, VerificationResult):
+                    raise ValueError("invalid result")
+                # Revalidate callback results without trusting overridden serializers
+                # or exposing malformed fields and exception text in diagnostics.
+                result = VerificationResult(result.verdict, result.summary, result.evidence_ids)
+            except Exception:
                 problem = "invalid_result"
-            elif any(ref not in available_ids for ref in result.evidence_ids):
-                problem = "invalid_evidence_reference"
+            else:
+                if any(ref not in available_ids for ref in result.evidence_ids):
+                    problem = "invalid_evidence_reference"
+                elif len(result.evidence_ids) > budget.max_evidence_refs:
+                    problem = "evidence_reference_limit"
         if problem:
-            envelope["checks"].append({"name": checker.name, "status": "error",
-                                       "verdict": "inconclusive", "summary": "Check unavailable.",
-                                       "evidence_ids": []})
-            envelope["gaps"].append({"verifier": checker.name, "reason": problem})
+            verdict = ("failed" if problem == "evidence_reference_limit"
+                       and result.verdict == "failed" else "inconclusive")
+            summary = ("Check returned too many evidence references."
+                       if problem == "evidence_reference_limit" else "Check unavailable.")
+            check = {"name": name, "status": "error", "verdict": verdict,
+                     "summary": summary, "evidence_ids": []}
+            envelope["gaps"].append({"verifier": name, "reason": problem})
         else:
             if result.verdict == "passed" and truncated_ids.intersection(result.evidence_ids):
                 result = VerificationResult(
                     "inconclusive", "Supporting evidence is truncated; inspect its original source.",
                     result.evidence_ids,
                 )
-                envelope["gaps"].append({"verifier": checker.name, "reason": "truncated_evidence"})
-            envelope["checks"].append({"name": checker.name, "status": "ok", **result.to_dict()})
+                envelope["gaps"].append({"verifier": name, "reason": "truncated_evidence"})
+            check = {"name": name, "status": "ok", **result.to_dict()}
+        summary = check["summary"]
+        remaining = budget.max_total_summary_chars - usage["retained_summary_chars"]
+        retained = summary[:min(budget.max_summary_chars, remaining)]
+        check.update(summary=retained, original_summary_chars=len(summary),
+                     summary_truncated=len(retained) < len(summary))
+        usage["retained_summary_chars"] += len(retained)
+        if check["summary_truncated"]:
+            usage["truncated_summaries"] += 1
+            envelope["gaps"].append({"verifier": name, "reason": "summary_truncated"})
+        if not retained:
+            usage["omitted_summaries"] += 1
+        if remaining < min(budget.max_summary_chars, len(summary)) and not exhausted:
+            envelope["gaps"].append({"verifier": None, "reason": "summary_budget_exhausted"})
+            exhausted = True
+        envelope["checks"].append(check)
     verdicts = [check["verdict"] for check in envelope["checks"]]
     if "failed" in verdicts:
         envelope["verdict"] = "failed"
-    elif verdicts and all(verdict == "passed" for verdict in verdicts):
+    elif not missing and verdicts and all(verdict == "passed" for verdict in verdicts):
         envelope["verdict"] = "passed"
     if not checkers:
         envelope["gaps"].append({"verifier": None, "reason": "no_verifiers"})

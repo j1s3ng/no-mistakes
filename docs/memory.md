@@ -12,10 +12,16 @@ Keyword overlap then recency determine retrieval. Contradictions may both appear
 the host must resolve them using actual user statements. Memory is untrusted data.
 
 Corrections preserve history and must stay within the original record's scope;
-cross-scope corrections fail without changing storage. New programmatic entries
-are validated before writing, and duplicate IDs in stored data are rejected.
-Superseded entries are excluded from retrieval. Graph
-export includes that history. `forget` deletes the entry's summary and source from
+cross-scope corrections fail without changing storage. On read, links between
+present records must be reciprocal, remain in one scope, and contain no self-link
+or cycle. Invalid history is rejected without automatic repair or rewriting; errors
+omit the stored contents and identifiers. Absent references can represent deleted
+history and remain untouched. The established `superseded_by: "deleted-correction"`
+marker means inactive history rather than a reference to a live record ID.
+This checks structural consistency, not whether a
+summary or its source is true. New programmatic entries are validated before writing,
+and duplicate IDs in stored data are rejected. Superseded entries are excluded from
+retrieval. Graph export includes that history. `forget` deletes the entry's summary and source from
 this file and unlinks corrections; deleting a correction does not reactivate an old
 preference. Delete the directory to purge all local memory. Exports, backups, shell
 history, and external copies require separate deletion.

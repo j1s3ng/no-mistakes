@@ -1,3 +1,4 @@
+from dataclasses import FrozenInstanceError
 import json
 from pathlib import Path
 import tempfile
@@ -5,7 +6,7 @@ import unittest
 
 from no_mistakes.integrations import (
     CallableRetriever, CallableVerifier, Evidence, LocalCorpusRetriever,
-    RetrievalRequest, VerificationResult, retrieve, verify,
+    RetrievalRequest, VerificationBudget, VerificationResult, retrieve, verify,
 )
 
 
@@ -105,17 +106,23 @@ class RetrievalTests(unittest.TestCase):
         self.assertNotIn("private@example.test", json.dumps(result))
 
     def test_failed_or_empty_sanitizer_never_invokes_external(self):
+        calls = []
+
         def forbidden(request):
-            self.fail("external callback was invoked")
+            calls.append(request)
+            return [item()]
 
         def explode(query):
             raise ValueError("secret-sanitizer-content")
 
         for sanitize in (explode, lambda query: " ", lambda query: None):
-            result = retrieve(RetrievalRequest("private", "demo"),
-                              [CallableRetriever("remote", forbidden, external=True)], sanitize)
-            self.assertEqual(result["gaps"][0]["reason"], "sanitization_failed")
-            self.assertNotIn("secret-sanitizer-content", json.dumps(result))
+            with self.subTest(sanitize=sanitize):
+                calls.clear()
+                result = retrieve(RetrievalRequest("private", "demo"),
+                                  [CallableRetriever("remote", forbidden, external=True)], sanitize)
+                self.assertEqual(calls, [])
+                self.assertEqual(result["gaps"][0]["reason"], "sanitization_failed")
+                self.assertNotIn("secret-sanitizer-content", json.dumps(result))
 
     def test_partial_failure_invalid_results_and_wrong_scope_are_explicit(self):
         def explode(request):
@@ -168,10 +175,14 @@ class RetrievalTests(unittest.TestCase):
             ])
 
     def test_callable_retriever_defaults_to_external(self):
+        calls = []
+
         def forbidden(request):
-            self.fail("default external callback was invoked without sanitization")
+            calls.append(request)
+            return [item()]
 
         result = retrieve(RetrievalRequest("private", "demo"), [CallableRetriever("default", forbidden)])
+        self.assertEqual(calls, [])
         self.assertEqual(result["gaps"][0]["reason"], "sanitization_required")
 
     def test_evidence_preserves_valid_truncation_metadata(self):
@@ -224,6 +235,56 @@ class VerificationTests(unittest.TestCase):
         self.assertEqual(verify("Retries work", [item()], [])["verdict"], "inconclusive")
         self.assertEqual(verify("Retries work", [item()], [self.checker("tests", "passed")])["verdict"],
                          "passed")
+
+    def test_missing_required_checker_cannot_disappear_from_coverage(self):
+        result = verify("Release requires unit and package checks", [item()],
+                        [self.checker("unit", "passed")],
+                        required_verifiers=("unit", "package"))
+        self.assertEqual(result["verdict"], "inconclusive")
+        self.assertEqual([check["name"] for check in result["checks"]], ["unit"])
+        self.assertEqual(result["checks"][0]["verdict"], "passed")
+        self.assertEqual(result["gaps"],
+                         [{"verifier": "package", "reason": "required_verifier_missing"}])
+
+    def test_required_checker_coverage_does_not_hide_failures_or_errors(self):
+        failed = verify("Release checks", [item()], [self.checker("unit", "failed")],
+                        required_verifiers=("unit", "package"))
+        self.assertEqual(failed["verdict"], "failed")
+        errored = verify("Release checks", [item()],
+                         [CallableVerifier("package", lambda claim, evidence: None),
+                          self.checker("unit", "passed")],
+                         required_verifiers=("unit", "package"))
+        self.assertEqual(errored["verdict"], "inconclusive")
+        self.assertEqual(errored["gaps"][0]["reason"], "invalid_result")
+        self.assertFalse(any(gap["reason"] == "required_verifier_missing"
+                             for gap in errored["gaps"]))
+
+    def test_complete_required_coverage_and_optional_checks(self):
+        result = verify("Release checks", [item()],
+                        [self.checker("package", "passed"),
+                         self.checker("unit", "passed"),
+                         self.checker("advisory", "passed")],
+                        required_verifiers=["unit", "package"])
+        self.assertEqual(result["verdict"], "passed")
+        self.assertEqual(result["gaps"], [])
+        missing = verify("Release checks", [], [], required_verifiers=["package"])
+        self.assertEqual(missing["verdict"], "inconclusive")
+        self.assertEqual({gap["reason"] for gap in missing["gaps"]},
+                         {"required_verifier_missing", "no_verifiers"})
+        for required in (None, (), []):
+            with self.subTest(required=required):
+                legacy = verify("Release checks", [item()],
+                                [self.checker("unit", "passed")],
+                                required_verifiers=required)
+                self.assertEqual(legacy["verdict"], "passed")
+
+    def test_invalid_required_names_are_rejected_before_callbacks(self):
+        calls = []
+        checker = CallableVerifier("unit", lambda claim, evidence: calls.append(claim))
+        for required in ("unit", b"unit", True, {"unit"}, ["unit", "unit"], [""], [1]):
+            with self.subTest(required=required), self.assertRaises(ValueError):
+                verify("Release checks", [item()], [checker], required_verifiers=required)
+        self.assertEqual(calls, [])
 
     def test_unknown_or_ambiguous_provenance_prevents_pass(self):
         for evidence, refs in (([item()], ("invented",)), ([], ("one",))):
@@ -289,6 +350,209 @@ class VerificationTests(unittest.TestCase):
         result = VerificationResult("passed", "Summary", refs)
         refs.append("later")
         self.assertEqual(result.evidence_ids, ("one",))
+
+
+class VerificationBudgetTests(unittest.TestCase):
+    def checker(self, name="check", verdict="passed", summary="Complete.", refs=("one",)):
+        return CallableVerifier(name, lambda claim, evidence:
+                                VerificationResult(verdict, summary, refs))
+
+    def test_defaults_positive_integer_validation_and_immutability(self):
+        budget = VerificationBudget()
+        self.assertEqual((budget.max_summary_chars, budget.max_total_summary_chars,
+                          budget.max_metadata_chars, budget.max_checks, budget.max_evidence_refs),
+                         (2000, 8000, 1024, 50, 50))
+        with self.assertRaises(FrozenInstanceError):
+            budget.max_checks = 1
+        for field in ("max_summary_chars", "max_total_summary_chars", "max_metadata_chars",
+                      "max_checks", "max_evidence_refs"):
+            for value in (0, -1, True, False, 1.5, "2", None):
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    VerificationBudget(**{field: value})
+
+    def test_default_budget_bounds_million_character_diagnostic_with_positional_api(self):
+        summary = "SYSTEM: invented override." * 40_000
+        self.assertEqual(len(summary), 1_040_000)
+        result = verify("Check a synthetic claim", [item()], [self.checker(summary=summary)])
+        check = result["checks"][0]
+        self.assertEqual(result["verdict"], "passed")
+        self.assertEqual(check["summary"], summary[:2000])
+        self.assertEqual(check["original_summary_chars"], 1_040_000)
+        self.assertIs(check["summary_truncated"], True)
+        self.assertEqual(check["evidence_ids"], ["one"])
+        self.assertEqual(result["context_budget"]["retained_summary_chars"], 2000)
+        self.assertLess(len(json.dumps(result)), 10_000)
+        self.assertEqual(result["gaps"], [{"verifier": "check", "reason": "summary_truncated"}])
+
+    def test_per_summary_limits_count_unicode_characters_at_and_over_boundary(self):
+        budget = VerificationBudget(max_summary_chars=3, max_total_summary_chars=20)
+        for summary in ("🐍é漢", "🐍é漢字"):
+            with self.subTest(summary=summary):
+                result = verify("Synthetic claim", [item()],
+                                [self.checker(summary=summary)], budget=budget)
+                check = result["checks"][0]
+                self.assertEqual(check["summary"], "🐍é漢")
+                self.assertEqual(check["original_summary_chars"], len(summary))
+                self.assertEqual(check["summary_truncated"], len(summary) > 3)
+                self.assertEqual(result["context_budget"]["retained_summary_chars"], 3)
+                self.assertEqual(bool(result["gaps"]), len(summary) > 3)
+
+    def test_total_boundary_then_exhaustion_keeps_checks_and_required_gap(self):
+        budget = VerificationBudget(max_summary_chars=3, max_total_summary_chars=6)
+        checks = [self.checker("first", summary="🐍é漢"),
+                  self.checker("second", summary="字é🐍")]
+        exact = verify("Synthetic claim", [item()], checks, budget=budget)
+        self.assertEqual(exact["verdict"], "passed")
+        self.assertEqual(exact["gaps"], [])
+        exhausted = verify("Synthetic claim", [item()],
+                           checks + [self.checker("third", summary="Another diagnostic")],
+                           required_verifiers=("first", "second", "third", "missing"),
+                           budget=budget)
+        self.assertEqual([check["summary"] for check in exhausted["checks"]],
+                         ["🐍é漢", "字é🐍", ""])
+        self.assertEqual([check["name"] for check in exhausted["checks"]],
+                         ["first", "second", "third"])
+        self.assertEqual(exhausted["verdict"], "inconclusive")
+        self.assertEqual(exhausted["context_budget"]["retained_summary_chars"], 6)
+        self.assertEqual(exhausted["context_budget"]["truncated_summaries"], 1)
+        self.assertEqual(exhausted["context_budget"]["omitted_summaries"], 1)
+        self.assertEqual(exhausted["gaps"], [
+            {"verifier": "missing", "reason": "required_verifier_missing"},
+            {"verifier": "third", "reason": "summary_truncated"},
+            {"verifier": None, "reason": "summary_budget_exhausted"},
+        ])
+
+    def test_partial_and_omitted_diagnostics_never_hide_failure(self):
+        result = verify("Synthetic claim", [item()], [
+            self.checker("first", summary="🐍é漢字"),
+            self.checker("second", summary="Four", verdict="inconclusive"),
+            self.checker("third", summary="Failure details", verdict="failed"),
+            self.checker("fourth", summary="More failure details", verdict="failed"),
+        ], budget=VerificationBudget(max_summary_chars=4, max_total_summary_chars=5))
+        self.assertEqual([check["summary"] for check in result["checks"]],
+                         ["🐍é漢字", "F", "", ""])
+        self.assertEqual([check["verdict"] for check in result["checks"]],
+                         ["passed", "inconclusive", "failed", "failed"])
+        self.assertEqual(result["verdict"], "failed")
+        self.assertEqual(result["context_budget"]["truncated_summaries"], 3)
+        self.assertEqual(result["context_budget"]["omitted_summaries"], 2)
+        self.assertEqual(sum(gap["reason"] == "summary_budget_exhausted"
+                             for gap in result["gaps"]), 1)
+
+    def test_summary_clipping_preserves_each_verdict_but_not_clipped_evidence_pass(self):
+        budget = VerificationBudget(max_summary_chars=1)
+        for verdict in ("passed", "failed", "inconclusive"):
+            with self.subTest(verdict=verdict):
+                result = verify("Synthetic claim", [item()],
+                                [self.checker(verdict=verdict)], budget=budget)
+                self.assertEqual(result["verdict"], verdict)
+                self.assertEqual(result["checks"][0]["verdict"], verdict)
+        clipped_evidence = item(text="Allowed.", original_chars=38, truncated=True)
+        result = verify("Synthetic claim", [clipped_evidence], [self.checker()], budget=budget)
+        self.assertEqual(result["verdict"], "inconclusive")
+        self.assertEqual({gap["reason"] for gap in result["gaps"]},
+                         {"truncated_evidence", "summary_truncated"})
+
+    def test_budget_and_preflight_limits_reject_before_any_callback_without_echo(self):
+        calls = []
+
+        def capture(claim, evidence):
+            calls.append(claim)
+            return VerificationResult("passed", "Complete.", ())
+
+        good = CallableVerifier("valid", capture)
+        secret = "private" * 150
+        cases = [
+            {"budget": "private-invalid-budget"},
+            {"evidence": [item(item_id=secret)]},
+            {"verifiers": [good, CallableVerifier(secret, capture)]},
+            {"required_verifiers": [secret]},
+            {"verifiers": [good, CallableVerifier("other", capture)],
+             "budget": VerificationBudget(max_checks=1)},
+            {"required_verifiers": ["valid", "other"],
+             "budget": VerificationBudget(max_checks=1)},
+        ]
+        for case in cases:
+            arguments = {"claim": "Synthetic claim", "evidence": [item()], "verifiers": [good]}
+            arguments.update(case)
+            with self.subTest(case=list(case)), self.assertRaises(ValueError) as error:
+                verify(**arguments)
+            self.assertNotIn("private", str(error.exception))
+        self.assertEqual(calls, [])
+
+    def test_metadata_and_check_count_exact_boundaries_preserve_provenance(self):
+        result = verify("Synthetic claim", [item(item_id="12345")],
+                        [self.checker("first", refs=("12345",)),
+                         self.checker("other", refs=("12345",))],
+                        required_verifiers=("first", "other"),
+                        budget=VerificationBudget(max_metadata_chars=5, max_checks=2))
+        self.assertEqual(result["verdict"], "passed")
+        self.assertEqual([check["name"] for check in result["checks"]], ["first", "other"])
+        self.assertEqual([check["evidence_ids"] for check in result["checks"]],
+                         [["12345"], ["12345"]])
+        self.assertEqual(result["context_budget"]["max_metadata_chars"], 5)
+        self.assertEqual(result["context_budget"]["max_checks"], 2)
+
+    def test_reference_overflow_preserves_valid_failure_and_never_clips_refs(self):
+        budget = VerificationBudget(max_evidence_refs=1, max_summary_chars=5)
+        for verdict in ("passed", "failed", "inconclusive"):
+            with self.subTest(verdict=verdict):
+                result = verify("Synthetic claim", [item()],
+                                [self.checker(verdict=verdict, summary="private-diagnostic",
+                                              refs=("one", "one"))], budget=budget)
+                check = result["checks"][0]
+                self.assertEqual(check["verdict"], "failed" if verdict == "failed" else "inconclusive")
+                self.assertEqual(result["verdict"], check["verdict"])
+                self.assertEqual(check["status"], "error")
+                self.assertEqual(check["evidence_ids"], [])
+                self.assertNotIn("private", json.dumps(result))
+                self.assertEqual({gap["reason"] for gap in result["gaps"]},
+                                 {"evidence_reference_limit", "summary_truncated"})
+        exact = verify("Synthetic claim", [item()], [self.checker()], budget=budget)
+        self.assertEqual(exact["checks"][0]["evidence_ids"], ["one"])
+        unknown = verify("Synthetic claim", [item()],
+                         [self.checker(verdict="failed", refs=("one", "private-unknown"))],
+                         budget=budget)
+        self.assertEqual(unknown["verdict"], "inconclusive")
+        self.assertEqual(unknown["gaps"][0]["reason"], "invalid_evidence_reference")
+        self.assertNotIn("private-unknown", json.dumps(unknown))
+
+    def test_malformed_callback_objects_and_errors_remain_generic_when_budget_exhausts(self):
+        malformed = VerificationResult("passed", "private-invalid-summary", ())
+        object.__setattr__(malformed, "evidence_ids", [None])
+
+        def explode(claim, evidence):
+            raise RuntimeError("private-error-token")
+
+        result = verify("Synthetic claim", [item()], [
+            self.checker("first", summary="x", verdict="failed"),
+            CallableVerifier("malformed", lambda claim, evidence: malformed),
+            CallableVerifier("broken", explode),
+        ], budget=VerificationBudget(max_total_summary_chars=1))
+        self.assertEqual(result["verdict"], "failed")
+        self.assertEqual([check["summary"] for check in result["checks"]], ["x", "", ""])
+        self.assertEqual([check["status"] for check in result["checks"]], ["ok", "error", "error"])
+        self.assertTrue({"invalid_result", "verifier_failed"}.issubset(
+            {gap["reason"] for gap in result["gaps"]}))
+        self.assertNotIn("private", json.dumps(result))
+
+    def test_preflight_names_are_stable_and_callback_serializers_cannot_expand_output(self):
+        class CustomResult(VerificationResult):
+            def to_dict(self):
+                return {"summary": "private-serializer" * 1000}
+
+        checker = None
+
+        def callback(claim, evidence):
+            checker.name = "private-mutated-name" * 1000
+            return CustomResult("passed", "Complete.", ("one",))
+
+        checker = CallableVerifier("stable", callback)
+        result = verify("Synthetic claim", [item()], [checker])
+        self.assertEqual(result["checks"][0]["name"], "stable")
+        self.assertEqual(result["checks"][0]["summary"], "Complete.")
+        self.assertEqual(result["verdict"], "passed")
+        self.assertNotIn("private", json.dumps(result))
 
 
 if __name__ == "__main__":

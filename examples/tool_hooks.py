@@ -25,8 +25,12 @@ def main():
                          [LocalCorpusRetriever(corpus)])
     calculator = CallableVerifier("integer-multiplication", integer_multiplication)
     print(json.dumps({"retrieval": retrieved,
-                      "correct_calculation": verify("17 * 43 = 731", [], [calculator]),
-                      "incorrect_calculation": verify("17 * 43 = 730", [], [calculator])}, indent=2))
+                      "correct_calculation": verify(
+                          "17 * 43 = 731", [], [calculator],
+                          required_verifiers=("integer-multiplication",)),
+                      "incorrect_calculation": verify(
+                          "17 * 43 = 730", [], [calculator],
+                          required_verifiers=("integer-multiplication",))}, indent=2))
 
 
 if __name__ == "__main__":

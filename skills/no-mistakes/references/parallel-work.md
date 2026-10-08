@@ -48,6 +48,10 @@ Budget: [bounded time/context/resources; parent pass; child slots if allocated]
 Return: [result, actual checks, changed paths, uncertainty, concrete blocker]
 ```
 
+Assign an owner for evidence artifacts too. When workers only need to report
+findings, prefer returned evidence for the parent to save; otherwise specify the
+owned output paths explicitly. Review files should not silently expand task outputs.
+
 Allocate finite time, context, tool/resource/cost limits, and concurrency across the
 whole task. Workers may recursively delegate only within explicit root allocations
 and actual host availability; no runaway fan-out. All worker substeps belong to
@@ -66,5 +70,8 @@ Inspect worker artifacts and actual evidence; a worker saying “done” is not 
 Resolve contradictions through sources, checks, and the user's explicit constraints,
 never by majority vote. Integrate sequentially, run affected checks, and perform the
 final big-picture review on the complete final artifact after substantive changes.
+For scoped work, compare the requested scope with the scope actually inspected;
+a nearby account, version, or project cannot silently fill missing coverage.
+Keep source-derived text distinct from the worker's assignment when forwarding it.
 Request concise decision/evidence summaries, never hidden chain-of-thought. Report
 remaining gaps honestly; parallel agreement alone is not independent verification.

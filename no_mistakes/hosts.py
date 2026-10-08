@@ -71,12 +71,18 @@ def skill_payload() -> dict[str, bytes]:
     return payload
 
 
-def _target(root: Path, relative: str) -> Path:
+def _relative_parts(relative: str) -> tuple[str, ...]:
     parts = PurePosixPath(relative).parts
     if (not parts or str(PurePosixPath(relative)) != relative
             or "\\" in relative or ":" in relative or PurePosixPath(relative).is_absolute()
+            or "\x00" in relative or any(0xD800 <= ord(char) <= 0xDFFF for char in relative)
             or any(part in (".", "..") for part in parts)):
         raise ValueError("Invalid installation path")
+    return parts
+
+
+def _target(root: Path, relative: str) -> Path:
+    parts = _relative_parts(relative)
     current = root
     for index, part in enumerate(parts):
         current = current / part
@@ -108,6 +114,27 @@ def _digest(content: bytes) -> str:
     return hashlib.sha256(content).hexdigest()
 
 
+def _manifest_files(content: bytes) -> dict[str, str]:
+    """Validate ownership records without inspecting their filesystem targets."""
+    try:
+        manifest = json.loads(content.decode("utf-8"))
+    except (ValueError, RecursionError):
+        raise ValueError("Invalid installation manifest") from None
+    if (not isinstance(manifest, dict) or type(manifest.get("version")) is not int
+            or manifest["version"] != 1 or not isinstance(manifest.get("files"), dict)):
+        raise ValueError("Invalid installation manifest")
+    owned = manifest["files"]
+    for relative, digest in owned.items():
+        valid_path = (isinstance(relative, str) and (
+            relative.startswith(SKILL_PATH + "/") or relative in (
+                ".claude/commands/no-mistakes.md", ".cursor/rules/no-mistakes.mdc")))
+        if (not valid_path or relative == MANIFEST_PATH
+                or not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None):
+            raise ValueError("Invalid installation manifest")
+        _relative_parts(relative)
+    return owned
+
+
 def install(project: str | Path, hosts: Sequence[str], *, dry_run: bool = False) -> dict:
     """Preflight every target, preserve unowned text, then atomically replace files.
 
@@ -129,18 +156,8 @@ def install(project: str | Path, hosts: Sequence[str], *, dry_run: bool = False)
     manifest_file = _target(root, MANIFEST_PATH)
     owned = {}
     if manifest_file.exists():
-        manifest = json.loads(manifest_file.read_bytes().decode("utf-8"))
-        if (not isinstance(manifest, dict) or type(manifest.get("version")) is not int
-                or manifest["version"] != 1 or not isinstance(manifest.get("files"), dict)):
-            raise ValueError("Invalid installation manifest")
-        owned = manifest["files"]
-        for relative, digest in owned.items():
-            valid_path = (isinstance(relative, str) and (
-                relative.startswith(SKILL_PATH + "/") or relative in (
-                    ".claude/commands/no-mistakes.md", ".cursor/rules/no-mistakes.mdc")))
-            if (not valid_path or relative == MANIFEST_PATH
-                    or not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None):
-                raise ValueError("Invalid installation manifest")
+        owned = _manifest_files(manifest_file.read_bytes())
+        for relative in owned:
             _target(root, relative)
 
     managed = {f"{SKILL_PATH}/{name}": content for name, content in skill_payload().items()}

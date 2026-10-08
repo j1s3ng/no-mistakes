@@ -1,0 +1,1286 @@
+{
+  "incumbent_commit": "22bb044f683006ae729740e47e50ad79619b2068",
+  "incumbent_version": "0.3.1",
+  "candidate_version": "0.4.0",
+  "probe": "examples/compare_snapshot.py",
+  "probe_sha256": "73316f320dd52e93108cc341f1c9161ecdd1a7699fed566ba695432f8314dc53",
+  "original_independent_probe_sha256": "6cf20a95e3ca77f886ce6ff3ab83e3427f2b6694712de312efae01a3148f581f",
+  "evaluator_adaptation": "CLI arguments, explicit module-origin checks, UTF-8 output and no-overwrite output handling added for reuse. An argument-variable collision failed both initial runs before output; corrected and rerun on both. All 30 criteria, expectations and observed shared fields match the independent original probe exactly.",
+  "status_counts": {
+    "improvement": 7,
+    "regression": 0,
+    "tie-satisfied": 23,
+    "tie-unsatisfied": 0
+  },
+  "comparisons": [
+    {
+      "name": "subclass_serializer_cannot_replace_bounded_evidence_or_provenance",
+      "area": "retrieval",
+      "change_kind": "hardening",
+      "expected": {
+        "id": "original-id",
+        "source": "synthetic:original",
+        "scope": "project:A",
+        "provider": "local",
+        "text_chars": 12,
+        "retained_text_chars": 12,
+        "original_chars": 80,
+        "truncated": true,
+        "extra_fields": []
+      },
+      "status": "improvement",
+      "incumbent": {
+        "id": "forged-id",
+        "source": "forged-source",
+        "scope": "project:other",
+        "provider": "forged-provider",
+        "text_chars": 10000,
+        "retained_text_chars": 12,
+        "original_chars": 80,
+        "truncated": true,
+        "extra_fields": [
+          "injected_extra"
+        ]
+      },
+      "candidate": {
+        "id": "original-id",
+        "source": "synthetic:original",
+        "scope": "project:A",
+        "provider": "local",
+        "text_chars": 12,
+        "retained_text_chars": 12,
+        "original_chars": 80,
+        "truncated": true,
+        "extra_fields": []
+      }
+    },
+    {
+      "name": "ordinary_round_robin_and_trust",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "ids": [
+          "a",
+          "c",
+          "b"
+        ],
+        "verified": false,
+        "trust": "untrusted",
+        "providers": [
+          2,
+          1
+        ]
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "ids": [
+          "a",
+          "c",
+          "b"
+        ],
+        "verified": false,
+        "trust": "untrusted",
+        "providers": [
+          2,
+          1
+        ]
+      },
+      "candidate": {
+        "ids": [
+          "a",
+          "c",
+          "b"
+        ],
+        "verified": false,
+        "trust": "untrusted",
+        "providers": [
+          2,
+          1
+        ]
+      }
+    },
+    {
+      "name": "retrieval_deduplicates_shared_provenance",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": [
+        "a",
+        "b",
+        "c"
+      ],
+      "status": "tie-satisfied",
+      "incumbent": [
+        "a",
+        "b",
+        "c"
+      ],
+      "candidate": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "name": "retrieval_scope_isolation",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "ids": [
+          "same"
+        ],
+        "scope_gap": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "ids": [
+          "same"
+        ],
+        "scope_gap": true
+      },
+      "candidate": {
+        "ids": [
+          "same"
+        ],
+        "scope_gap": true
+      }
+    },
+    {
+      "name": "retrieval_failure_isolation_and_error_redaction",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "ids": [
+          "good"
+        ],
+        "failed": true,
+        "leaked": false
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "ids": [
+          "good"
+        ],
+        "failed": true,
+        "leaked": false
+      },
+      "candidate": {
+        "ids": [
+          "good"
+        ],
+        "failed": true,
+        "leaked": false
+      }
+    },
+    {
+      "name": "external_callback_requires_and_receives_sanitized_query",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "blocked_calls": [],
+        "blocked_ids": [],
+        "blocked_gap": true,
+        "allowed_calls": [
+          "synthetic-clean-query"
+        ],
+        "allowed_ids": [
+          "a"
+        ],
+        "private_query_returned": false
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "blocked_calls": [],
+        "blocked_ids": [],
+        "blocked_gap": true,
+        "allowed_calls": [
+          "synthetic-clean-query"
+        ],
+        "allowed_ids": [
+          "a"
+        ],
+        "private_query_returned": false
+      },
+      "candidate": {
+        "blocked_calls": [],
+        "blocked_ids": [],
+        "blocked_gap": true,
+        "allowed_calls": [
+          "synthetic-clean-query"
+        ],
+        "allowed_ids": [
+          "a"
+        ],
+        "private_query_returned": false
+      }
+    },
+    {
+      "name": "retrieval_excludes_conflicting_full_text_provenance",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "ids": [
+          "b"
+        ],
+        "conflict_gaps": 2
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "ids": [
+          "b"
+        ],
+        "conflict_gaps": 2
+      },
+      "candidate": {
+        "ids": [
+          "b"
+        ],
+        "conflict_gaps": 2
+      }
+    },
+    {
+      "name": "retrieval_excerpt_and_aggregate_limits_are_truthful",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "lengths": [
+          6,
+          4
+        ],
+        "originals": [
+          20,
+          20
+        ],
+        "truncated": [
+          true,
+          true
+        ],
+        "retained": 10,
+        "omitted": 1,
+        "exhausted": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "lengths": [
+          6,
+          4
+        ],
+        "originals": [
+          20,
+          20
+        ],
+        "truncated": [
+          true,
+          true
+        ],
+        "retained": 10,
+        "omitted": 1,
+        "exhausted": true
+      },
+      "candidate": {
+        "lengths": [
+          6,
+          4
+        ],
+        "originals": [
+          20,
+          20
+        ],
+        "truncated": [
+          true,
+          true
+        ],
+        "retained": 10,
+        "omitted": 1,
+        "exhausted": true
+      }
+    },
+    {
+      "name": "retrieval_preserves_preexisting_truncation",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "text": "partial",
+        "original_chars": 100,
+        "truncated": true,
+        "gap": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "text": "partial",
+        "original_chars": 100,
+        "truncated": true,
+        "gap": true
+      },
+      "candidate": {
+        "text": "partial",
+        "original_chars": 100,
+        "truncated": true,
+        "gap": true
+      }
+    },
+    {
+      "name": "retrieval_rejects_provenance_instead_of_clipping_it",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "ids": [],
+        "limited": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "ids": [],
+        "limited": true
+      },
+      "candidate": {
+        "ids": [],
+        "limited": true
+      }
+    },
+    {
+      "name": "ordinary_local_corpus_ranking_and_scope",
+      "area": "retrieval",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "ids": [
+          "more",
+          "less"
+        ],
+        "scores": [
+          1.0,
+          0.5
+        ]
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "ids": [
+          "more",
+          "less"
+        ],
+        "scores": [
+          1.0,
+          0.5
+        ]
+      },
+      "candidate": {
+        "ids": [
+          "more",
+          "less"
+        ],
+        "scores": [
+          1.0,
+          0.5
+        ]
+      }
+    },
+    {
+      "name": "memory_rejects_present_self_correction",
+      "area": "memory",
+      "change_kind": "hardening",
+      "expected": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      },
+      "status": "improvement",
+      "incumbent": {
+        "read_rejected": false,
+        "context_rejected": false,
+        "mutation_rejected": false,
+        "bytes_unchanged": false,
+        "exception_types": [
+          null,
+          null,
+          null
+        ]
+      },
+      "candidate": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      }
+    },
+    {
+      "name": "memory_rejects_present_cross_scope_correction",
+      "area": "memory",
+      "change_kind": "hardening",
+      "expected": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      },
+      "status": "improvement",
+      "incumbent": {
+        "read_rejected": false,
+        "context_rejected": false,
+        "mutation_rejected": false,
+        "bytes_unchanged": false,
+        "exception_types": [
+          null,
+          null,
+          null
+        ]
+      },
+      "candidate": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      }
+    },
+    {
+      "name": "memory_rejects_present_nonreciprocal_correction",
+      "area": "memory",
+      "change_kind": "hardening",
+      "expected": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      },
+      "status": "improvement",
+      "incumbent": {
+        "read_rejected": false,
+        "context_rejected": false,
+        "mutation_rejected": false,
+        "bytes_unchanged": false,
+        "exception_types": [
+          null,
+          null,
+          null
+        ]
+      },
+      "candidate": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      }
+    },
+    {
+      "name": "memory_rejects_present_reciprocal_cycle",
+      "area": "memory",
+      "change_kind": "hardening",
+      "expected": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      },
+      "status": "improvement",
+      "incumbent": {
+        "read_rejected": false,
+        "context_rejected": false,
+        "mutation_rejected": false,
+        "bytes_unchanged": false,
+        "exception_types": [
+          null,
+          null,
+          null
+        ]
+      },
+      "candidate": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      }
+    },
+    {
+      "name": "memory_duplicate_ids_remain_rejected",
+      "area": "memory",
+      "change_kind": "hardening",
+      "expected": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      },
+      "candidate": {
+        "read_rejected": true,
+        "context_rejected": true,
+        "mutation_rejected": true,
+        "bytes_unchanged": true,
+        "exception_types": [
+          "ValueError",
+          "ValueError",
+          "ValueError"
+        ]
+      }
+    },
+    {
+      "name": "normal_delete_chain_position_0",
+      "area": "memory",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "code": 0,
+        "scope_A": [
+          "Synthetic current preference"
+        ],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "code": 0,
+        "scope_A": [
+          "Synthetic current preference"
+        ],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      },
+      "candidate": {
+        "code": 0,
+        "scope_A": [
+          "Synthetic current preference"
+        ],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      }
+    },
+    {
+      "name": "normal_delete_chain_position_1",
+      "area": "memory",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "code": 0,
+        "scope_A": [
+          "Synthetic current preference"
+        ],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "code": 0,
+        "scope_A": [
+          "Synthetic current preference"
+        ],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      },
+      "candidate": {
+        "code": 0,
+        "scope_A": [
+          "Synthetic current preference"
+        ],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      }
+    },
+    {
+      "name": "normal_delete_chain_position_2",
+      "area": "memory",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "code": 0,
+        "scope_A": [],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "code": 0,
+        "scope_A": [],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      },
+      "candidate": {
+        "code": 0,
+        "scope_A": [],
+        "scope_B": [
+          "Synthetic other scope"
+        ],
+        "deleted_id_absent": true,
+        "deleted_text_absent": true
+      }
+    },
+    {
+      "name": "absent_correction_references_preserve_deleted_history",
+      "area": "memory",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "read_count": 4,
+        "active_A": [
+          "new"
+        ],
+        "active_B": [
+          "other"
+        ],
+        "unchanged": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "read_count": 4,
+        "active_A": [
+          "new"
+        ],
+        "active_B": [
+          "other"
+        ],
+        "unchanged": true
+      },
+      "candidate": {
+        "read_count": 4,
+        "active_A": [
+          "new"
+        ],
+        "active_B": [
+          "other"
+        ],
+        "unchanged": true
+      }
+    },
+    {
+      "name": "deleted_history_marker_preserves_unrelated_live_identifier",
+      "area": "memory",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "read_count": 2,
+        "active": [
+          "deleted-correction"
+        ]
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "read_count": 2,
+        "active": [
+          "deleted-correction"
+        ]
+      },
+      "candidate": {
+        "read_count": 2,
+        "active": [
+          "deleted-correction"
+        ]
+      }
+    },
+    {
+      "name": "normal_correction_cannot_move_across_scopes",
+      "area": "memory",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "raised": "ValueError",
+        "unchanged": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "raised": "ValueError",
+        "unchanged": true
+      },
+      "candidate": {
+        "raised": "ValueError",
+        "unchanged": true
+      }
+    },
+    {
+      "name": "ordinary_verification_pass",
+      "area": "verification",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "verdict": "passed",
+        "gap_present": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "verdict": "passed",
+        "gap_present": true
+      },
+      "candidate": {
+        "verdict": "passed",
+        "gap_present": true
+      }
+    },
+    {
+      "name": "verification_failure_cannot_be_outvoted",
+      "area": "verification",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "verdict": "failed",
+        "gap_present": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "verdict": "failed",
+        "gap_present": true
+      },
+      "candidate": {
+        "verdict": "failed",
+        "gap_present": true
+      }
+    },
+    {
+      "name": "verification_unknown_reference_is_inconclusive",
+      "area": "verification",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      },
+      "candidate": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      }
+    },
+    {
+      "name": "verification_truncated_support_is_inconclusive",
+      "area": "verification",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      },
+      "candidate": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      }
+    },
+    {
+      "name": "verification_no_checks_is_inconclusive",
+      "area": "verification",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      },
+      "candidate": {
+        "verdict": "inconclusive",
+        "gap_present": true
+      }
+    },
+    {
+      "name": "verification_callback_failure_and_error_redaction",
+      "area": "verification",
+      "change_kind": "existing-behavior",
+      "expected": {
+        "verdict": "inconclusive",
+        "gap": true,
+        "leaked": false
+      },
+      "status": "tie-satisfied",
+      "incumbent": {
+        "verdict": "inconclusive",
+        "gap": true,
+        "leaked": false
+      },
+      "candidate": {
+        "verdict": "inconclusive",
+        "gap": true,
+        "leaked": false
+      }
+    },
+    {
+      "name": "subclass_serializer_cannot_replace_checked_verifier_result",
+      "area": "verification",
+      "change_kind": "hardening",
+      "expected": {
+        "verdict": "failed",
+        "check": {
+          "name": "check",
+          "status": "ok",
+          "verdict": "failed",
+          "summary": "Synthetic check failed.",
+          "evidence_ids": [
+            "a"
+          ]
+        },
+        "gaps": []
+      },
+      "status": "improvement",
+      "incumbent": {
+        "verdict": "passed",
+        "check": {
+          "name": "forged",
+          "status": "forged",
+          "verdict": "passed",
+          "summary": "forged summary",
+          "evidence_ids": [
+            "unknown"
+          ]
+        },
+        "gaps": []
+      },
+      "candidate": {
+        "verdict": "failed",
+        "check": {
+          "name": "check",
+          "status": "ok",
+          "verdict": "failed",
+          "summary": "Synthetic check failed.",
+          "evidence_ids": [
+            "a"
+          ]
+        },
+        "gaps": []
+      }
+    },
+    {
+      "name": "default_verifier_diagnostics_have_bounded_retained_size",
+      "area": "verification",
+      "change_kind": "new-retention-bound-via-shared-signature",
+      "expected": {
+        "verdict": "passed",
+        "checks": 5,
+        "max_summary_chars": 2000,
+        "max_total_summary_chars": 8000,
+        "refs_preserved": true
+      },
+      "status": "improvement",
+      "incumbent": {
+        "verdict": "passed",
+        "checks": 5,
+        "summary_lengths": [
+          6000,
+          6000,
+          6000,
+          6000,
+          6000
+        ],
+        "total_summary_chars": 30000,
+        "refs": [
+          [
+            "a"
+          ],
+          [
+            "a"
+          ],
+          [
+            "a"
+          ],
+          [
+            "a"
+          ],
+          [
+            "a"
+          ]
+        ]
+      },
+      "candidate": {
+        "verdict": "passed",
+        "checks": 5,
+        "summary_lengths": [
+          2000,
+          2000,
+          2000,
+          2000,
+          0
+        ],
+        "total_summary_chars": 8000,
+        "refs": [
+          [
+            "a"
+          ],
+          [
+            "a"
+          ],
+          [
+            "a"
+          ],
+          [
+            "a"
+          ],
+          [
+            "a"
+          ]
+        ]
+      }
+    }
+  ],
+  "unit_tests": {
+    "incumbent": {
+      "tests": 115,
+      "seconds": 2.314,
+      "ok": true,
+      "sha256": "3a4838ccd35253ae6a9cc3c751608b955ee66b7147545395fc837b682147db6c"
+    },
+    "incumbent_tests_candidate_implementation": {
+      "tests": 115,
+      "seconds": 2.336,
+      "ok": true,
+      "sha256": "fa677056a9e1484d2b21f3f643745a7ea76a5a746357ad5b563ab30a5533b8c7"
+    }
+  },
+  "baseline_compatibility_setup": {
+    "method": "Full incumbent archive with only no_mistakes directory replaced by candidate snapshot; tests, docs, corpus and skill dependencies remain incumbent bytes.",
+    "incumbent_tests_byte_identical": true,
+    "incumbent_docs_byte_identical": true,
+    "incumbent_skills_byte_identical": true
+  },
+  "verify_api": {
+    "incumbent": [
+      "claim",
+      "evidence",
+      "verifiers"
+    ],
+    "candidate": [
+      "claim",
+      "evidence",
+      "verifiers",
+      "required_verifiers",
+      "budget"
+    ],
+    "new_only_parameters": [
+      "required_verifiers",
+      "budget"
+    ],
+    "treatment": "New-only required_verifiers/budget keyword support was excluded from paired criteria and is not an incumbent defect."
+  },
+  "candidate_module_hashes": {
+    "__init__.py": "c2b8541b3bf0b3b4bb63b0e7f3619b53ead8c0dd9a09bc302403d5a645e3f8c6",
+    "__main__.py": "7afeadd4522552160b4980dc798d62c6351e23026023c4dc3f40ef0a286a8f3d",
+    "cli.py": "eddaa055db44a6638762ef0fe0a370845d0a2692c3e0d50d85a99553845da1e1",
+    "diagnostics.py": "6016cacacfd8f9febb44ac7646a53efe58d3236bcdbf6eec18128c8c07971f86",
+    "hosts.py": "06011493e6701d4df9517fa471e6cbf6925df25c32dba904264cd1497d1c372f",
+    "http_adapter.py": "cdd4d6a0121384e3a02ba1ee4223f6851cb093a5a43148cf908bb3993fc0dae5",
+    "integrations.py": "f001875e717a1024cd840e0dbed4f103d128b78e032ba8dfa925390ec7e29421"
+  },
+  "installation_upgrades": {
+    "cli_subprocesses": 59,
+    "cases": [
+      {
+        "candidate_entries": 35,
+        "case": "codex",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "codex"
+        ],
+        "incumbent_entries": 34,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      },
+      {
+        "candidate_entries": 35,
+        "case": "copilot",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "copilot"
+        ],
+        "incumbent_entries": 34,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      },
+      {
+        "candidate_entries": 36,
+        "case": "claude",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "claude"
+        ],
+        "incumbent_entries": 35,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      },
+      {
+        "candidate_entries": 36,
+        "case": "cursor",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "cursor"
+        ],
+        "incumbent_entries": 35,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      },
+      {
+        "candidate_entries": 35,
+        "case": "gemini",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "gemini"
+        ],
+        "incumbent_entries": 34,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      },
+      {
+        "candidate_entries": 35,
+        "case": "generic",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "generic"
+        ],
+        "incumbent_entries": 34,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      },
+      {
+        "candidate_entries": 37,
+        "case": "all-hosts",
+        "changed_on_upgrade": [
+          ".agents/skills/no-mistakes/.install-manifest.json",
+          ".agents/skills/no-mistakes/SKILL.md",
+          ".agents/skills/no-mistakes/references/adaptive-flow.md",
+          ".agents/skills/no-mistakes/references/parallel-work.md",
+          ".agents/skills/no-mistakes/references/task-contracts.md",
+          ".agents/skills/no-mistakes/references/tool-hooks.md",
+          ".agents/skills/no-mistakes/references/web-research.md"
+        ],
+        "doctor_ok": true,
+        "dry_run_read_only": true,
+        "exact_payload_and_routes": true,
+        "hosts": [
+          "codex",
+          "copilot",
+          "claude",
+          "cursor",
+          "gemini",
+          "generic"
+        ],
+        "incumbent_entries": 36,
+        "initial_entries": 27,
+        "repeat_idempotent": true,
+        "unrelated_bytes_preserved": true
+      }
+    ],
+    "conflict_cases": [
+      {
+        "case": "malformed-manifest",
+        "exit": 2,
+        "no_persistent_writes": true,
+        "stderr": "no-mistakes: Invalid installation manifest"
+      },
+      {
+        "case": "malformed-routing",
+        "exit": 2,
+        "no_persistent_writes": true,
+        "stderr": "no-mistakes: Routing markers must contain exactly one ordered begin/end pair"
+      },
+      {
+        "case": "locally-modified-skill",
+        "exit": 2,
+        "no_persistent_writes": true,
+        "stderr": "no-mistakes: Existing file is unowned or locally modified: .agents/skills/no-mistakes/SKILL.md"
+      },
+      {
+        "case": "locally-modified-claude-adapter",
+        "exit": 2,
+        "no_persistent_writes": true,
+        "stderr": "no-mistakes: Existing file is unowned or locally modified: .claude/commands/no-mistakes.md"
+      },
+      {
+        "case": "locally-modified-cursor-adapter",
+        "exit": 2,
+        "no_persistent_writes": true,
+        "stderr": "no-mistakes: Existing file is unowned or locally modified: .cursor/rules/no-mistakes.mdc"
+      }
+    ],
+    "extended_cases": [
+      {
+        "case": "all-to-codex-subset",
+        "doctor_hosts": [
+          "codex",
+          "copilot",
+          "claude",
+          "cursor",
+          "gemini",
+          "generic"
+        ],
+        "doctor_ok": true,
+        "repeat_idempotent": true,
+        "unselected_routes_adapters_and_ownership_preserved": true
+      },
+      {
+        "case": "all-to-codex-preserve-unselected-local-adapter",
+        "doctor_hosts": [
+          "codex"
+        ],
+        "doctor_ok": true,
+        "repeat_idempotent": true,
+        "unselected_routes_adapters_and_ownership_preserved": true
+      },
+      {
+        "case": "retired-owned-reference",
+        "clean_retired_reference_and_ownership_deleted": true,
+        "doctor_ok": true,
+        "dry_run_reports_delete_read_only": true
+      },
+      {
+        "case": "retired-locally-edited-reference",
+        "exit": 2,
+        "no_persistent_writes": true,
+        "stderr": "no-mistakes: Existing file is unowned or locally modified: .agents/skills/no-mistakes/references/synthetic-retired.md"
+      }
+    ],
+    "material_upgrade_regressions": [],
+    "method": "Two version-separated source snapshots; real subprocess installs incumbent then candidate into the same synthetic projects, with import-origin assertions. File/dir/mode/symlink inventories; read-only operations also compare inode/mtime/ctime. Synthetic data only."
+  },
+  "limitations": [
+    "Synthetic deterministic local adapter probes; no actual network calls, external services or user history.",
+    "30 prespecified behavior criteria are coverage counts, not an accuracy score or an estimate of model quality.",
+    "Bounded diagnostic retention is a new default capacity behavior exercised through the common three-positional-argument verify API; older release never offered VerificationBudget.",
+    "Unit compatibility covers untouched incumbent suite and dependencies, not all possible downstream callers or the new candidate-only APIs.",
+    "Candidate output adds summary telemetry. Shared-field comparison intentionally permits additive fields.",
+    "Artifacts describe the frozen candidate module hashes; later implementation edits require revalidation.",
+    "Upgrade inventories observe persistent state, not every transient effect. Host file contracts do not measure native loading or model quality."
+  ]
+}

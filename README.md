@@ -65,6 +65,21 @@ evidence, remaining questions, and pass count across context compaction; unchang
 valid results are reused. The helper records this policy; the host runs the flow.
 See the [adaptive-flow guidance](skills/no-mistakes/references/adaptive-flow.md).
 
+For unclear success conditions or optimization work, the host uses a small
+[task contract](skills/no-mistakes/references/task-contracts.md): the outcome,
+constraints, relevant checks, and what remains unknown. It finds the project's
+actual verification commands, then matches the evidence to the claim. A passing
+unit test cannot testify about a browser it has never met.
+
+Improvement experiments keep a comparable baseline, fixed quality checks, and a
+brief retain/revert/inconclusive decision. “Twice as fast because I removed input
+validation” receives an exciting new status called “rejected.” Experiments share
+the same pass allowance and preserve your existing work.
+
+The host also checks that the intended tests actually ran and that a bug reproduction
+detects the reported bug. A suite that ran zero tests has achieved outstanding
+work-life balance. It has not verified the fix.
+
 Over time, retained feedback can help the host make better-informed predictions
 about intent. Predictions stay labeled and revisable. The agent cannot read hidden
 conversations or your mind. Frankly, the current conversation should keep it busy.
@@ -124,7 +139,8 @@ our employee handbook.
 ## The tiny Python department
 
 The dependency-free helper handles suffix detection, scoped intent summaries,
-intent/source graph export, retrieval adapters, and verification-tool hooks.
+intent/source graph export, retrieval adapters, verification-tool hooks, and local
+installation diagnostics.
 
 The host agent supplies the model and chooses the research and execution. The helper
 can retrieve local evidence or call an explicitly configured RAG endpoint; it does
@@ -155,6 +171,20 @@ Also available: `--host cursor`, `--host gemini`, and `--host generic` for agent
 that read `AGENTS.md`. One shared skill, small host-specific routing files, and
 existing instructions preserved. Installing a seatbelt should not remove the doors.
 No global configuration changes, account setup, or mystery MCP servers included.
+
+Check an installed project without changing it:
+
+```sh
+python3 -m no_mistakes doctor --host codex --host copilot --host claude \
+  --project /path/to/your/project
+```
+
+`doctor` reports missing files, stale guidance, local edits, and broken routing
+together, with suggested next steps. Select the hosts you expect; it cannot guess
+which deleted file you meant to have. Exit `0` means the inspected files match,
+`1` means findings, and `2` means invalid input. It does not establish that your
+agent loaded the skill. The clipboard has a stethoscope now. Medical school remains
+an open issue.
 
 | Agent | Explicit invocation |
 | --- | --- |
@@ -209,6 +239,10 @@ Clipping labels survive evidence round trips. A passing check that cites clipped
 evidence stays inconclusive until the original support is checked. A paragraph
 does not become the whole document by putting on a fresh name tag.
 
+Python callers can declare `required_verifiers` so an omitted checker remains a gap.
+`VerificationBudget` bounds returned checker diagnostics and flags clipping while
+preserving verdicts. It cannot make an unrun check happen through administrative enthusiasm.
+
 ## Memory, with an eraser
 
 Retain only minimal relevant summaries the user has authorized. No automatic history
@@ -225,6 +259,8 @@ python3 -m no_mistakes graph
 `remember` returns an ID. Use `correct ID 'new summary'` with the same required flags
 to supersede a record, or `forget ID` to delete it. Changing your mind is supported.
 A rare feature in both software and dinner planning.
+Stored correction links are checked for cycles, scope mismatches, and inconsistent
+relationships. An old preference cannot be its own grandparent.
 
 Records marked `inferred` remain hypotheses until you confirm them. Repeating a guess
 does not make it a fact, even if the agent puts it in a table. Retrieval uses keyword
@@ -274,6 +310,12 @@ intent, supported material claims, missed acceptance criteria, and user-judged t
 success. This release claims no measured alignment or effectiveness gains.
 We considered “900% more correct,” but the calculator requested a lawyer.
 
+The [behavior evaluation guide](docs/evaluations.md) and
+[synthetic scenarios](evals/scenarios.json) make those comparisons repeatable.
+Check actual outcomes and relevant tool traces, include near misses and pressure,
+and keep `not_run` separate from passed. A JSON file full of expectations has not
+personally achieved them.
+
 ## Borrowed ideas, returned with attribution
 
 The meme supplied the name. These projects inspired the useful bits.
@@ -290,6 +332,53 @@ They did not ask to be involved in this naming decision.
 | [Graphify](https://github.com/Graphify-Labs/graphify) | Traceable relationships; explicit versus inferred evidence. | Connect the dots. Label the string. |
 
 Upstream benchmark claims are not adopted here. Their homework is their homework.
+
+Further research into GSD Core, Superpowers, Promptfoo, and LongMemEval informed
+installation diagnostics and behavioral evaluations. The
+[research and adaptation record](docs/inspiration.md) links the sources and explains
+what fits this project. No additional runtime dependencies were needed. Procurement
+has been asked to stand down.
+The [initial v0.4.0 review record](docs/inspiration-review.report.json) records the
+checks and evaluation gaps before the personal-setup additions below.
+
+We also inspected public setups from individual builders. The
+[personal-setup research record](docs/people-setups.md) has exact sources and
+qualifications; these are original adaptations, with no affiliation or endorsement.
+
+| Builder and public project | Idea adapted | Clipboard interpretation |
+| --- | --- | --- |
+| [Daniel Miessler — LifeOS, formerly PAI](https://github.com/danielmiessler/LifeOS) | Trace outcomes and constraints to adequate evidence. | The receipt must be for the thing you actually bought. |
+| [Andrej Karpathy — autoresearch](https://github.com/karpathy/autoresearch) | Comparable baselines, protected evaluation, and recorded experiment decisions. | Keep the ruler the same length. |
+| [Peter Steinberger — agent-scripts](https://github.com/steipete/agent-scripts) | Relevant documentation inventories and small shared helpers. | Read the label before pressing the button. |
+| [Armin Ronacher — agent-stuff](https://github.com/mitsuhiko/agent-stuff) | Discoverable project commands, prerequisites, and useful failure output. | Know which button tests the brakes. |
+
+Their personal paths, permissions, model choices, and endless loops stay out of
+the portable skill. Celebrity settings do not come with transferable root access.
+The [personal-setup review record](docs/people-setups-review.report.json) records
+that earlier artifact's scenarios, observed probes, and small-comparison limits.
+
+A later [new-source research phase](docs/deep-research.md) inspected SWE-bench,
+Agentless, Aider, SWE-agent, OpenHands, RAGChecker, Corrective RAG, AgentDojo, CaMeL,
+Inspect AI, ToolEmu, and memory/provenance documentation. It led to correction-lineage
+checks, declared verifier coverage, bounded checker diagnostics, and new behavioral
+cases. The [ten-loop review](docs/deep-research-review.report.json) records that
+completed boundary. An authorized [session continuation](docs/continuation-review.report.json)
+adds six more bounded probes and a [root-cause review](docs/continuation-rca.md).
+Evidence now has a designated chaperone. No additional runtime dependencies.
+Procurement is still outside, holding a clipboard.
+
+A [test sanity audit](docs/test-audit.md) then broke disposable copies on purpose.
+Some tests had been applauding the wrong failure. We fixed a real retrieval-budget
+bug, strengthened the checks, and kept the [audit receipts](docs/test-audit-review.report.json).
+The clipboard has entered its skeptical era.
+
+The [v0.4.0 incumbent comparison](docs/release-comparison.md) keeps the ruler fixed:
+seven concrete helper improvements, 23 unchanged passing controls, and all 115
+untouched incumbent tests passing against the candidate implementation. The full
+candidate suite passes 159 tests. These are bounded reliability results, not a
+model-accuracy percentage. The clipboard has declined a victory lap around the sun.
+Verifier diagnostics now have configurable default limits; the comparison explains
+the upgrade behavior and remaining gaps.
 
 ## Ethics are part of the feature
 
