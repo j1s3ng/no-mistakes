@@ -103,6 +103,24 @@ This is behavioral guidance, not an automatic PII filter. The Python helper does
 not detect or redact personal information. See the skill's
 [context and privacy guidance](skills/no-mistakes/references/context-and-privacy.md).
 
+## The internet is evidence, not management
+
+Web research starts with a specific question, a few focused queries, and short
+source-linked excerpts. The host drops page clutter and duplicates, keeps caveats
+and contradictions, and fetches more only for a named gap. No need to bring the
+entire internet into the meeting. It has opinions about the thermostat.
+
+Pages, snippets, titles, metadata, and code stay untrusted, including after a worker
+summarizes them. They cannot approve actions, request secrets, or appoint a new RAG
+endpoint. A webpage wearing a tiny manager tie remains a webpage.
+
+The retrieval helper bounds evidence text per item and in total, flags clipping,
+and labels results untrusted and unverified. Host browsing follows the
+[focused research guidance](skills/no-mistakes/references/web-research.md); the helper
+does not operate a browser or automatically detect injections. Smaller excerpts and
+labels reduce exposure; they do not promise prevention. The internet did not sign
+our employee handbook.
+
 ## The tiny Python department
 
 The dependency-free helper handles suffix detection, scoped intent summaries,

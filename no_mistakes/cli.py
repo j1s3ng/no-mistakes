@@ -207,6 +207,10 @@ def main(argv=None):
     queries.add_argument("--query-file", type=Path)
     p.add_argument("--scope", required=True)
     p.add_argument("--limit", type=int, default=5)
+    p.add_argument("--max-excerpt-chars", type=int, default=2_000,
+                   help="Maximum Unicode characters per evidence excerpt (default: 2000)")
+    p.add_argument("--max-text-chars", type=int, default=8_000,
+                   help="Maximum total evidence text characters (default: 8000)")
     p.add_argument("--corpus", type=Path, action="append", default=[])
     p.add_argument("--endpoint", help="Explicit JSON-over-HTTPS RAG endpoint")
     p.add_argument("--token-env", help="Environment variable holding the endpoint bearer token")
@@ -259,12 +263,14 @@ def main(argv=None):
         elif args.command == "graph":
             result = graph(root)
         elif args.command == "retrieve":
-            from .integrations import LocalCorpusRetriever, RetrievalRequest, retrieve
+            from .integrations import ContextBudget, LocalCorpusRetriever, RetrievalRequest, retrieve
             from .http_adapter import JsonHttpRetriever
             if not args.corpus and not args.endpoint:
                 raise ValueError("Provide --corpus, --endpoint, or both")
             if args.token_env and not args.endpoint:
                 raise ValueError("--token-env requires --endpoint")
+            budget = ContextBudget(max_excerpt_chars=args.max_excerpt_chars,
+                                   max_text_chars=args.max_text_chars)
             query = (args.query_file.read_text(encoding="utf-8") if args.query_file else
                      args.query if args.query is not None else sys.stdin.read())
             providers = [LocalCorpusRetriever(path, name=f"local-{index + 1}")
@@ -276,7 +282,7 @@ def main(argv=None):
                 reviewed = args.sanitized_query_file.read_text(encoding="utf-8").strip()
                 sanitizer = lambda original: reviewed
             result = retrieve(RetrievalRequest(query, args.scope, args.limit), providers,
-                              sanitize_query=sanitizer)
+                              sanitize_query=sanitizer, budget=budget)
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 1 if result["gaps"] else 0
         else:

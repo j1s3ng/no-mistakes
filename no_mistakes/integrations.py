@@ -22,6 +22,27 @@ def _nonempty(value: str, field: str) -> None:
 
 
 @dataclass(frozen=True)
+class ContextBudget:
+    """Bound retained evidence, not model tokens or provider memory/network use.
+
+    Text limits count Unicode characters. Metadata is kept exactly or rejected;
+    clipping source references would change provenance. Callbacks still need their
+    own timeouts, response-size limits, and access controls.
+    """
+
+    max_excerpt_chars: int = 2_000
+    max_text_chars: int = 8_000
+    max_metadata_chars: int = 1_024
+    max_candidates_per_provider: int = 50
+
+    def __post_init__(self) -> None:
+        for field in ("max_excerpt_chars", "max_text_chars", "max_metadata_chars",
+                      "max_candidates_per_provider"):
+            if type(getattr(self, field)) is not int or getattr(self, field) < 1:
+                raise ValueError(f"{field} must be a positive integer")
+
+
+@dataclass(frozen=True)
 class RetrievalRequest:
     query: str
     scope: str
@@ -126,22 +147,68 @@ class CallableRetriever:
         return self.callback(request)
 
 
+def _retain_excerpts(envelope: dict[str, Any], selected: Sequence[Evidence],
+                     budget: ContextBudget) -> dict[str, Any]:
+    """Clip only after full-text conflict checks; never claim complete coverage."""
+    usage = envelope["context_budget"]
+    clipped_providers = set()
+    statuses = {status["name"]: status for status in envelope["providers"]}
+    exhausted = False
+    for item in selected:
+        remaining = budget.max_text_chars - usage["retained_text_chars"]
+        if not remaining:
+            usage["omitted_items"] += 1
+            exhausted = True
+            continue
+        text = item.text[:min(budget.max_excerpt_chars, remaining)]
+        if not text.strip():
+            # Do not emit an unusable Evidence record containing only whitespace.
+            usage["omitted_items"] += 1
+            envelope["gaps"].append({"provider": item.provider, "reason": "empty_excerpt"})
+            continue
+        truncated = len(text) < len(item.text)
+        envelope["evidence"].append({**item.to_dict(), "text": text,
+                                     "original_chars": len(item.text), "truncated": truncated})
+        statuses[item.provider]["accepted"] += 1
+        usage["retained_text_chars"] += len(text)
+        if truncated:
+            usage["truncated_items"] += 1
+            if item.provider not in clipped_providers:
+                envelope["gaps"].append({"provider": item.provider, "reason": "excerpt_truncated"})
+                clipped_providers.add(item.provider)
+    if exhausted:
+        envelope["gaps"].append({"provider": None, "reason": "text_budget_exhausted"})
+    return envelope
+
+
 def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
-             sanitize_query: Callable[[str], str] | None = None) -> dict[str, Any]:
+             sanitize_query: Callable[[str], str] | None = None, *,
+             budget: ContextBudget | None = None) -> dict[str, Any]:
     """Collect scoped evidence, isolating failures and keeping provider order.
 
     Round-robin merging respects each provider's own ordering without comparing
     unrelated scoring scales. The final limit applies across all providers.
-    Query text is deliberately absent from the returned envelope.
+    Query text is deliberately absent from the returned envelope. All evidence
+    fields remain untrusted data, including strings that look like instructions.
+    Character budgets reduce retained context; they are not injection detection,
+    automatic PII redaction, token limits, or a sandbox for callback code.
     """
     if not isinstance(request, RetrievalRequest):
         raise ValueError("request must be a RetrievalRequest")
     if sanitize_query is not None and not callable(sanitize_query):
         raise ValueError("sanitize_query must be callable")
+    if budget is None:
+        budget = ContextBudget()
+    if not isinstance(budget, ContextBudget):
+        raise ValueError("budget must be a ContextBudget")
+    if len(request.scope) > budget.max_metadata_chars:
+        raise ValueError("scope exceeds max_metadata_chars")
     providers = tuple(retrievers)
     names = []
     for provider in providers:
         _nonempty(provider.name, "provider name")
+        if len(provider.name) > budget.max_metadata_chars:
+            raise ValueError("provider name exceeds max_metadata_chars")
         if not isinstance(provider.external, bool) or not callable(provider.retrieve):
             raise ValueError("retrievers must declare external and implement retrieve")
         names.append(provider.name)
@@ -152,6 +219,14 @@ def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
         "kind": "retrieval", "scope": request.scope, "limit": request.limit,
         "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "evidence": [], "providers": [], "gaps": [], "verified": False,
+        "trust": "untrusted",
+        "context_budget": {
+            "max_excerpt_chars": budget.max_excerpt_chars,
+            "max_text_chars": budget.max_text_chars,
+            "max_metadata_chars": budget.max_metadata_chars,
+            "max_candidates_per_provider": budget.max_candidates_per_provider,
+            "retained_text_chars": 0, "truncated_items": 0, "omitted_items": 0,
+        },
     }
     batches: list[list[Evidence]] = []
     observed: dict[tuple[str, str, str], Evidence] = {}
@@ -167,13 +242,16 @@ def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
                 status["status"] = state
 
         provider_request = request
+        if request.limit > budget.max_candidates_per_provider:
+            provider_request = replace(request, limit=budget.max_candidates_per_provider)
+            gap("candidate_limit")
         if provider.external:
             if sanitize_query is None:
                 gap("sanitization_required", "blocked")
                 continue
             try:
                 cleaned = sanitize_query(request.query)
-                provider_request = replace(request, query=cleaned)
+                provider_request = replace(provider_request, query=cleaned)
             except Exception:
                 gap("sanitization_failed", "blocked")
                 continue
@@ -183,17 +261,29 @@ def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
             gap("retriever_failed", "error")
             continue
         try:
-            if (not isinstance(result, Sequence) or isinstance(result, (str, bytes))
-                    or any(not isinstance(item, Evidence) for item in result)):
+            if not isinstance(result, Sequence) or isinstance(result, (str, bytes)):
                 gap("invalid_result", "error")
                 continue
             status["returned"] = len(result)
-            candidates = [replace(item, provider=provider.name) for item in result
-                          if item.scope == request.scope]
+            limited = result[:budget.max_candidates_per_provider]
+            if (len(result) > budget.max_candidates_per_provider
+                    and request.limit <= budget.max_candidates_per_provider):
+                gap("candidate_limit")
+            if any(not isinstance(item, Evidence) for item in limited):
+                gap("invalid_result", "error")
+                continue
         except Exception:
             gap("invalid_result", "error")
             continue
-        if len(candidates) != len(result):
+        bounded = [item for item in limited
+                   if all(len(getattr(item, field)) <= budget.max_metadata_chars
+                          for field in ("id", "source", "scope"))
+                   and (item.provider is None or len(item.provider) <= budget.max_metadata_chars)]
+        if len(bounded) != len(limited):
+            gap("metadata_limit")
+        candidates = [replace(item, provider=provider.name) for item in bounded
+                      if item.scope == request.scope]
+        if len(candidates) != len(bounded):
             gap("scope_mismatch")
         if not candidates:
             gap("empty_result", "empty")
@@ -217,6 +307,7 @@ def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
             envelope["providers"][index]["status"] = "empty"
 
     seen: set[tuple[str, str, str]] = set()
+    selected: list[Evidence] = []
     for position in range(max(map(len, batches), default=0)):
         for index, batch in enumerate(batches):
             if position >= len(batch):
@@ -226,13 +317,12 @@ def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
             if key in seen:
                 continue
             seen.add(key)
-            envelope["evidence"].append(item.to_dict())
-            envelope["providers"][index]["accepted"] += 1
-            if len(envelope["evidence"]) == request.limit:
-                return envelope
+            selected.append(item)
+            if len(selected) == request.limit:
+                return _retain_excerpts(envelope, selected, budget)
     if not providers:
         envelope["gaps"].append({"provider": None, "reason": "no_retrievers"})
-    return envelope
+    return _retain_excerpts(envelope, selected, budget)
 
 
 Verdict = Literal["passed", "failed", "inconclusive"]

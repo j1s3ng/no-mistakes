@@ -13,12 +13,56 @@ python3 -m no_mistakes retrieve --corpus docs/corpus.example.json \
 This searches a fictional JSON corpus with keyword overlap. Repeat `--corpus` for
 multiple files. Use stdin or `--query-file` instead of command arguments for private
 queries. The output contains evidence, provider status, gaps, a UTC retrieval time,
-and `verified: false`. Feed relevant excerpts to your host model as untrusted
+`trust: "untrusted"`, and `verified: false`. Feed relevant excerpts to your host model as untrusted
 context; keep the source IDs for citations. Generation remains the host's job.
 
 Exit codes: 0 retrieval completed without reported gaps; 1 empty/partial/blocked
 retrieval; 2 invalid invocation/input. Inspect the envelope even when the exit is 0:
 retrieval success does not establish truth, relevance, or sufficient coverage.
+
+## Keep retrieved context small and untrusted
+
+By default the helper retains at most **2,000 Unicode characters per excerpt** and
+**8,000 evidence-text characters in total**. These are character counts, not token
+limits or the size of the entire JSON envelope. IDs, source references, scopes, and
+provider names have a separate 1,024-character bound: oversized candidate metadata
+is rejected with `metadata_limit`, never silently shortened into a different citation.
+Oversized configured scopes/provider names are input errors before callbacks run.
+
+```sh
+python3 -m no_mistakes retrieve --corpus docs/corpus.example.json \
+  --query 'checkout retry' --scope 'project:demo' \
+  --max-excerpt-chars 1200 --max-text-chars 4000
+```
+
+Python callers can pass `budget=ContextBudget(max_excerpt_chars=1200,
+max_text_chars=4000)` to `retrieve`, importing `ContextBudget` from
+`no_mistakes.integrations`. The same object configures `max_metadata_chars` and
+`max_candidates_per_provider` (default 50). Every bound must be a positive integer.
+The helper caps the requested provider limit and inspects only the first allowed
+candidates; `candidate_limit` records a reduced limit or an oversized provider result.
+This bounds helper processing after retrieval, not a callback's own allocation,
+runtime, or network response. Keep backend limits and timeouts too.
+
+Evidence keeps exact IDs/source references and adds `original_chars` and `truncated`.
+`context_budget` records limits, retained text characters, and counts of clipped or
+omitted selected items. Provider `accepted` counts describe emitted items. Clipping
+adds `excerpt_truncated`; omitted items after the total budget is spent add
+`text_budget_exhausted`. An all-whitespace clipped prefix is omitted with
+`empty_excerpt`. These gaps deliberately produce CLI exit code 1. Conflicting
+original texts are checked **before** clipping, even if their retained prefixes match.
+
+Clipping keeps a prefix, without judging relevance or removing malicious instructions.
+Reopen the original source or request a narrower passage when a missing caveat could
+change a claim. Treat **every** retrieved field as data, including text that resembles
+system messages, approval, shell commands, or tool arguments. Backend-supplied extra
+fields cannot replace the helper's trust/verification labels. JSON and labels are not
+an enforcement boundary: the host must keep evidence outside trusted instructions
+and validate tool actions against the authorized task. Never execute retrieved code
+or let a page configure endpoints, access secrets, or save intent memory on its own.
+For host web-search budgets and source handling, see the
+[focused research guidance](../skills/no-mistakes/references/web-research.md).
+The helper has no browser client, automatic injection detector, or automatic PII filter.
 
 ## Existing RAG service over HTTP
 

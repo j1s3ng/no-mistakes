@@ -46,6 +46,35 @@ class RetrievalCliTests(unittest.TestCase):
                               '--scope', 'project:demo', '--limit', '0')
         self.assertEqual(result.returncode, 2)
 
+    def test_context_budget_flags_bound_text_and_report_truncation(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'corpus.json'
+            path.write_text(json.dumps([
+                {'id': str(index), 'text': 'retry ' + ('x' * 20),
+                 'source': 'demo://source', 'scope': 'demo'}
+                for index in range(3)
+            ]))
+            result = self.run_cli('--corpus', str(path), '--query', 'retry', '--scope', 'demo',
+                                  '--max-excerpt-chars', '7', '--max-text-chars', '10')
+        self.assertEqual(result.returncode, 1, result.stderr)
+        envelope = json.loads(result.stdout)
+        self.assertEqual([len(item['text']) for item in envelope['evidence']], [7, 3])
+        self.assertTrue(all(item['truncated'] for item in envelope['evidence']))
+        self.assertTrue(all(item['original_chars'] == 26 for item in envelope['evidence']))
+        self.assertEqual(envelope['context_budget']['retained_text_chars'], 10)
+        self.assertEqual(envelope['context_budget']['omitted_items'], 1)
+        self.assertEqual(envelope['trust'], 'untrusted')
+        self.assertFalse(envelope['verified'])
+
+    def test_invalid_context_budgets_fail_without_tracebacks(self):
+        for flag in ('--max-excerpt-chars', '--max-text-chars'):
+            for value in ('0', '-1', 'false', '1.5'):
+                with self.subTest(flag=flag, value=value):
+                    result = self.run_cli('--corpus', 'docs/corpus.example.json',
+                                          '--query', 'retry', '--scope', 'project:demo', flag, value)
+                    self.assertEqual(result.returncode, 2)
+                    self.assertNotIn('Traceback', result.stderr)
+
 
 if __name__ == '__main__':
     unittest.main()
