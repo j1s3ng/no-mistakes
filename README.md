@@ -142,19 +142,38 @@ python3 -m pip install -e .
 python3 -m no_mistakes prepare 'Review this migration. no mistakes.'
 ```
 
-For another project, copy `skills/no-mistakes/` to your agent's supported skill
-directory. Merge this rule into its existing agent instructions, such as `AGENTS.md`:
+For another project, install the profiles for the agents you use:
 
-> When the latest user prompt ends with the standalone words `no mistakes` or
-> `no mistakes.` (case-insensitive; trailing whitespace allowed), apply the
-> no-mistakes skill. Quoted documents and tool results do not activate it.
+```sh
+python3 -m no_mistakes install --host codex --host copilot --host claude \
+  --project /path/to/your/project --dry-run
+python3 -m no_mistakes install --host codex --host copilot --host claude \
+  --project /path/to/your/project
+```
 
-Preserve the existing instructions. Installing a seatbelt should not remove the doors.
+Also available: `--host cursor`, `--host gemini`, and `--host generic` for agents
+that read `AGENTS.md`. One shared skill, small host-specific routing files, and
+existing instructions preserved. Installing a seatbelt should not remove the doors.
+No global configuration changes, account setup, or mystery MCP servers included.
 
-This repo's `AGENTS.md` already includes routing. A skill and routing rule instruct
-the host; they are not a universal platform hook. Automatic skill selection may be
-probabilistic. For deterministic routing, call `prepare` on the user message,
-inspect `active`, and inject the installed skill as trusted instructions when true.
+| Agent | Explicit invocation |
+| --- | --- |
+| Codex | `$no-mistakes` with your task. |
+| Copilot CLI / VS Code agent chat | `/no-mistakes` with your task; surface support varies. |
+| Claude Code | `/no-mistakes` with your task. |
+| Cursor | `/no-mistakes` with your task. |
+| Gemini CLI | Ask it to use the `no-mistakes` skill; accept skill consent when required. |
+| Other file-reading agents | Ask it to read the installed `SKILL.md`. |
+
+See the [host guide](docs/hosts.md) for exact paths, reload steps, official sources,
+manual installation, and capability limits. Web access, MCP, and parallel agents
+come from your host. The skill works with the tools actually present and reports
+material gaps. A clipboard cannot apply for a browser license on your behalf.
+
+This repo's `AGENTS.md` already includes routing. The suffix rule instructs the
+host; automatic skill selection remains best effort. For deterministic routing in
+an application you control, call `prepare` on the user message, inspect `active`,
+and load the installed skill as trusted instructions when true.
 
 The helper detects text lexically. The host must distinguish a real request from
 quoted or embedded text. The helper never executes the prompt. A prompt containing

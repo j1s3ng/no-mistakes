@@ -25,7 +25,7 @@ jobs:
           import tarfile
           import zipfile
 
-          required = {"README.md", "LICENSE", "AGENTS.md"}
+          required = {"README.md", "LICENSE", "AGENTS.md", "setup.py"}
           for directory, patterns in {
               "docs": ("*.md", "*.json"),
               "skills/no-mistakes": ("*.md",),
@@ -37,9 +37,18 @@ jobs:
           with tarfile.open(next(Path("dist").glob("*.tar.gz"))) as archive:
               source_files = {str(PurePosixPath(name).relative_to(PurePosixPath(name).parts[0]))
                               for name in archive.getnames()}
+              prefix = PurePosixPath(archive.getnames()[0]).parts[0]
+              for source in Path("skills/no-mistakes").rglob("*.md"):
+                  assert archive.extractfile(f"{prefix}/{source}").read() == source.read_bytes(), source
           assert required <= source_files, f"Missing source files: {required - source_files}"
           with zipfile.ZipFile(next(Path("dist").glob("*.whl"))) as archive:
               wheel_files = set(archive.namelist())
+              expected_skill = set()
+              for source in Path("skills/no-mistakes").rglob("*.md"):
+                  bundled = "no_mistakes/_skill/" + str(source.relative_to("skills/no-mistakes"))
+                  expected_skill.add(bundled)
+                  assert archive.read(bundled) == source.read_bytes(), bundled
+              assert {name for name in wheel_files if name.startswith("no_mistakes/_skill/")} == expected_skill
           assert "no_mistakes/cli.py" in wheel_files
           private_parts = {".no-mistakes", ".git", ".venv", "__pycache__", "build", "dist", ".pytest_cache"}
           for name in source_files | wheel_files:
@@ -71,4 +80,42 @@ jobs:
           assert example["retrieval"]["verified"] is False
           assert example["correct_calculation"]["verdict"] == "passed"
           assert example["incorrect_calculation"]["verdict"] == "failed"
+          PY
+      - name: Exercise installed host setup outside checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          mkdir installed-smoke
+          no-mistakes install --host codex --host copilot --host claude --host cursor --host gemini --host generic --project installed-smoke --dry-run
+          python - <<'PY'
+          from pathlib import Path
+
+          assert not list(Path("installed-smoke").iterdir()), "Dry-run wrote project files"
+          PY
+          no-mistakes install --host codex --host copilot --host claude --host cursor --host gemini --host generic --project installed-smoke
+          python - <<'PY'
+          from importlib import resources
+          from pathlib import Path
+
+          project = Path("installed-smoke")
+          for route in (
+              "AGENTS.md",
+              "CLAUDE.md",
+              "GEMINI.md",
+              ".github/copilot-instructions.md",
+              ".cursor/rules/no-mistakes.mdc",
+              ".claude/commands/no-mistakes.md",
+          ):
+              assert (project / route).is_file(), route
+          bundled = resources.files("no_mistakes").joinpath("_skill")
+          installed = project / ".agents/skills/no-mistakes"
+
+          def compare(source, target):
+              for item in source.iterdir():
+                  destination = target / item.name
+                  if item.is_dir():
+                      compare(item, destination)
+                  else:
+                      assert destination.read_bytes() == item.read_bytes(), destination
+
+          compare(bundled, installed)
           PY

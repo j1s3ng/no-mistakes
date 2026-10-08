@@ -1,4 +1,4 @@
-include README.md LICENSE AGENTS.md
+include README.md LICENSE AGENTS.md setup.py
 recursive-include docs *.md *.json
 recursive-include skills/no-mistakes *.md
 recursive-include examples *.py

@@ -8,6 +8,21 @@ description: Reconstruct user intent, research uncertain facts, and verify task 
 Treat the name as an aspiration, never a guarantee. This workflow does not increase
 permissions, reveal hidden history, or make unavailable tools available.
 
+## Adapt to the host
+
+Preserve the host's instruction priority, project rules, permissions, and approval
+controls. Discover the current mode's actual search, file, terminal, MCP, and worker
+capabilities; tool names and availability differ across hosts and versions. Use
+supported equivalents and serial work when workers are absent. If a necessary check
+cannot run, identify the gap and provide a manual check where useful; never invent
+tool access or verification. Do not enable broader permissions to imitate a host.
+
+Native skill selection and suffix-routing instructions are best effort. Explicitly
+invoke the installed skill if the host misses activation. Without an interactive
+reply channel, stop on a stall or exhausted allowance with `needs_input` and a compact
+checkpoint for the next user turn; do not retry, infer approval, or run extra passes.
+Use the installed helper only when a supported Python/terminal environment exists.
+
 ## Activate
 
 Activate on the latest user message ending with the standalone words `no mistakes`,

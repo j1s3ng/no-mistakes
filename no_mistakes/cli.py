@@ -184,6 +184,11 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--memory-dir", type=Path, default=Path(".no-mistakes"))
     sub = parser.add_subparsers(dest="command", required=True)
+    from .hosts import HOSTS
+    setup = sub.add_parser("install", help="Install project-scoped skill and host routing without changing permissions")
+    setup.add_argument("--host", action="append", choices=tuple(HOSTS), required=True)
+    setup.add_argument("--project", type=Path, default=Path.cwd())
+    setup.add_argument("--dry-run", action="store_true", help="Preview changes without writing files")
     prepare = sub.add_parser("prepare", help="Detect suffix in a user prompt; emit a workflow handoff")
     prepare.add_argument("prompt", nargs="?", help="Omit to read plain text from stdin")
     for command in ("remember", "correct"):
@@ -221,7 +226,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     root = args.memory_dir
     try:
-        if args.command == "prepare":
+        if args.command == "install":
+            from .hosts import install
+            result = install(args.project, args.host, dry_run=args.dry_run)
+        elif args.command == "prepare":
             result = activation(args.prompt if args.prompt is not None else sys.stdin.read())
             if result["active"]:
                 result["instruction"] = "Apply the installed no-mistakes skill to this task."
