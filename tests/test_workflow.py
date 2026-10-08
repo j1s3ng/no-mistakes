@@ -52,6 +52,47 @@ class MemoryTests(unittest.TestCase):
             remember(self.root, 'Preference', 'user:1', 'a', 'explicit', 'missing')
         self.assertFalse(self.root.exists())
 
+    def test_correction_cannot_move_intent_between_project_scopes(self):
+        original = remember(self.root, 'Keep the public API', 'user:1', 'project:A', 'explicit')
+        before = (self.root / 'memory.json').read_bytes()
+        with self.assertRaises(ValueError):
+            remember(self.root, 'Use a new API', 'user:2', 'project:B', 'confirmed', original['id'])
+        self.assertEqual((self.root / 'memory.json').read_bytes(), before)
+        self.assertEqual([entry['id'] for entry in context(self.root, '', 'project:A')], [original['id']])
+        self.assertEqual(context(self.root, '', 'project:B'), [])
+
+    def test_invalid_programmatic_memory_input_does_not_create_storage(self):
+        valid = dict(text='A preference', source='user:1', scope='project:A', kind='explicit')
+        for invalid in ({'text': None}, {'source': 1}, {'scope': ' '}, {'kind': 'guessed'},
+                        {'kind': None}, {'supersedes': ''}, {'supersedes': True}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                remember(self.root, **{**valid, **invalid})
+            self.assertFalse(self.root.exists())
+
+    def test_duplicate_memory_ids_are_rejected_without_rewriting_data(self):
+        original = remember(self.root, 'A preference', 'user:1', 'project:A', 'explicit')
+        path = self.root / 'memory.json'
+        path.write_text(json.dumps([original, {**original, 'text': 'Conflicting preference'}]))
+        before = path.read_bytes()
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(main(['--memory-dir', str(self.root), 'context']), 2)
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_graph_preserves_node_order_edges_and_shared_sources(self):
+        first = remember(self.root, 'First preference', 'user:1', 'project:A', 'explicit')
+        second = remember(self.root, 'Second preference', 'user:1', 'project:A', 'confirmed')
+        correction = remember(self.root, 'Revised preference', 'user:2', 'project:A',
+                              'explicit', first['id'])
+        result = graph(self.root)
+        self.assertEqual([node['id'] for node in result['nodes']],
+                         [first['id'], 'source:user:1', second['id'], correction['id'], 'source:user:2'])
+        self.assertEqual(result['edges'], [
+            {'from': first['id'], 'to': 'source:user:1', 'relation': 'supported_by', 'basis': 'explicit'},
+            {'from': second['id'], 'to': 'source:user:1', 'relation': 'supported_by', 'basis': 'confirmed'},
+            {'from': correction['id'], 'to': 'source:user:2', 'relation': 'supported_by', 'basis': 'explicit'},
+            {'from': correction['id'], 'to': first['id'], 'relation': 'supersedes', 'basis': 'explicit'},
+        ])
+
     def test_malformed_memory_returns_input_error_without_traceback(self):
         self.root.mkdir()
         for records in ([None], [{}], [{'id': 'one', 'text': None}]):

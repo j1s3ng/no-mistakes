@@ -35,8 +35,12 @@ and 8,000 in total; metadata and candidate processing are bounded separately.
 Clipping and omissions remain visible gaps. These are context limits, not a token
 budget, injection detector, or guarantee that retained evidence is complete.
 Use `ContextBudget` or the CLI text-limit flags to fit the task; reopen originals
-when clipping might hide a qualification. See the [integration guide](../../../docs/integrations.md)
-for exact fields and [web research](web-research.md) for focused host searches.
+when clipping might hide a qualification. Preserve `original_chars` and `truncated`
+when forwarding or reconstructing evidence; a clipped excerpt is still incomplete.
+Use the installed helper's `retrieve --help` for CLI fields and
+[web research](web-research.md) for focused host searches. The optional online
+[integration guide](https://github.com/j1s3ng/no-mistakes/blob/main/docs/integrations.md)
+has full examples; it is not required to apply this installed skill.
 A retrieval score measures the provider's ranking, not truth. Empty results or tool
 failures must remain visible. Use appropriate timeouts in custom adapters; stop
 rather than retrying indefinitely. The built-in HTTP adapter refuses redirects and
@@ -45,7 +49,9 @@ bounds timeout/response size.
 Use deterministic checks where appropriate: recomputation, schema/type validation,
 relevant tests, and citation inspection. A second model can offer a review, but its
 agreement is advisory. The verification aggregator preserves failed checks and treats
-missing/errored checks as inconclusive. Its verdict describes callback outcomes;
+missing/errored checks as inconclusive. A passing check that relies on clipped
+evidence remains inconclusive until the missing qualification is reviewed.
+Its verdict describes callback outcomes;
 inspect the actual evidence instead of treating the aggregate as a truth guarantee.
 Verifier callbacks have no automatic sanitizer: minimize/sanitize the claim, evidence,
 and source metadata before sending them to a remote checker. Preserve uncertainty

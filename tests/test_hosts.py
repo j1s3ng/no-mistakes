@@ -34,6 +34,13 @@ class HostInstallTests(unittest.TestCase):
             install(self.project, hosts)
         self.assertEqual(self.snapshot(), before)
 
+    def install_with_retired_reference(self, hosts=('codex',)):
+        payload = dict(skill_payload())
+        payload['references/retired.md'] = b'# Retired workflow guidance\n'
+        with patch('no_mistakes.hosts.skill_payload', return_value=payload):
+            install(self.project, hosts)
+        return f'{SKILL_PATH}/references/retired.md'
+
     def test_dry_run_reports_changes_without_creating_files_or_directories(self):
         result = install(self.project, list(HOSTS), dry_run=True)
         self.assertTrue(result['dry_run'])
@@ -120,6 +127,62 @@ class HostInstallTests(unittest.TestCase):
             again = install(self.project, ['codex'])
             self.assertTrue(all(item['action'] == 'unchanged' for item in again['files']))
 
+    def test_retired_skill_file_dry_run_then_deletion_preserves_unowned_files(self):
+        retired = self.install_with_retired_reference()
+        extra = self.write(f'{SKILL_PATH}/references/local-guide.md', '# Local guide\n')
+        before = self.snapshot()
+        preview = install(self.project, ['codex'], dry_run=True)
+        actions = {item['path']: item['action'] for item in preview['files']}
+        self.assertEqual(actions[retired], 'delete')
+        self.assertEqual(actions[MANIFEST_PATH], 'update')
+        self.assertEqual(self.snapshot(), before)
+
+        result = install(self.project, ['codex'])
+        self.assertIn({'path': retired, 'action': 'delete'}, result['files'])
+        self.assertFalse((self.project / retired).exists())
+        manifest = json.loads((self.project / MANIFEST_PATH).read_text())
+        self.assertNotIn(retired, manifest['files'])
+        self.assertEqual(extra.read_bytes(), b'# Local guide\n')
+        self.assertTrue(extra.parent.is_dir())
+        again = install(self.project, ['codex'])
+        self.assertTrue(all(item['action'] == 'unchanged' for item in again['files']))
+
+    def test_missing_retired_skill_file_is_removed_from_manifest(self):
+        retired = self.install_with_retired_reference()
+        (self.project / retired).unlink()
+        result = install(self.project, ['codex'])
+        manifest = json.loads((self.project / MANIFEST_PATH).read_text())
+        self.assertNotIn(retired, manifest['files'])
+        self.assertNotIn(retired, {item['path'] for item in result['files']})
+        self.assertTrue((self.project / retired).parent.is_dir())
+
+    def test_modified_retired_skill_file_rejects_upgrade_before_any_writes(self):
+        retired = self.install_with_retired_reference()
+        self.write(retired, '# Local edits to retired guidance\n')
+        self.assert_no_changes_after_failure(['codex', 'copilot', 'claude'])
+        self.assertFalse((self.project / '.github').exists())
+        self.assertFalse((self.project / 'CLAUDE.md').exists())
+
+    def test_late_host_conflict_prevents_retired_file_deletion(self):
+        retired = self.install_with_retired_reference()
+        self.write('CLAUDE.md', BEGIN + '\nmissing end marker\n')
+        self.assert_no_changes_after_failure(['codex', 'copilot', 'claude'])
+        self.assertTrue((self.project / retired).is_file())
+        self.assertFalse((self.project / '.github').exists())
+
+    def test_retiring_skill_file_preserves_unselected_native_adapters(self):
+        retired = self.install_with_retired_reference(('claude', 'cursor'))
+        command = self.write('.claude/commands/no-mistakes.md', '# Local command customization\n')
+        cursor = (self.project / HOSTS['cursor']).read_bytes()
+        owned_before = json.loads((self.project / MANIFEST_PATH).read_text())['files']
+        install(self.project, ['codex'])
+        owned_after = json.loads((self.project / MANIFEST_PATH).read_text())['files']
+        self.assertFalse((self.project / retired).exists())
+        self.assertEqual(command.read_bytes(), b'# Local command customization\n')
+        self.assertEqual((self.project / HOSTS['cursor']).read_bytes(), cursor)
+        for relative in ('.claude/commands/no-mistakes.md', HOSTS['cursor']):
+            self.assertEqual(owned_after[relative], owned_before[relative])
+
     def test_existing_project_instructions_are_preserved_for_each_routing_file(self):
         for relative in ('AGENTS.md', 'CLAUDE.md', 'GEMINI.md', '.github/copilot-instructions.md'):
             self.write(relative, '# Existing instructions\nKeep the existing behavior.\n')
@@ -188,6 +251,8 @@ class HostInstallTests(unittest.TestCase):
                    json.dumps({'version': 1, 'files': {f'{SKILL_PATH}/SKILL.md': 'invalid'}}),
                    json.dumps({'version': 1, 'files': {'AGENTS.md': '0' * 64}}),
                    json.dumps({'version': 1, 'files': {MANIFEST_PATH: '0' * 64}}),
+                   json.dumps({'version': 1, 'files': {f'{SKILL_PATH}//SKILL.md': '0' * 64}}),
+                   json.dumps({'version': 1, 'files': {f'{SKILL_PATH}/./SKILL.md': '0' * 64}}),
                    json.dumps({'version': 1, 'files': {f'{SKILL_PATH}/../../outside.md': '0' * 64}})]
         for record in records:
             with self.subTest(record=record):

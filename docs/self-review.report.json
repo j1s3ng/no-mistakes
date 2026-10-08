@@ -1,0 +1,87 @@
+{
+  "intent": "Run No Mistakes on its own repository, fix demonstrated weaknesses, and reduce unnecessary work without weakening privacy, honesty, or host compatibility.",
+  "baseline": "v0.3.0, commit fc4504e3002f74d0e04441c96b36ac121cf23358",
+  "criteria": [
+    {
+      "text": "Preserve declared evidence truncation through retrieval and verification.",
+      "status": "passed",
+      "evidence": "Round-trip and metadata-conflict regressions in tests/test_context_budget.py and tests/test_integrations.py pass. An installed-wheel CLI retrieval clipped synthetic text, preserved original_chars through another retrieval, and kept a callback pass citing that text inconclusive."
+    },
+    {
+      "text": "Keep corrections within their original scope and reject corrupt memory before writes.",
+      "status": "passed",
+      "evidence": "tests/test_workflow.py checks cross-scope correction rejection with unchanged storage, invalid programmatic entries without storage creation, duplicate-ID rejection, and graph ordering/shared-source parity."
+    },
+    {
+      "text": "Safely remove retired owned skill files during upgrades.",
+      "status": "passed",
+      "evidence": "tests/test_hosts.py covers hash-matching removal, locally modified-file preflight rejection, missing-file ownership cleanup, no-write dry runs, preservation of unowned extras and unselected adapters, and rejection of noncanonical manifest paths."
+    },
+    {
+      "text": "Reduce unnecessary instruction loading and graph export work.",
+      "status": "passed",
+      "evidence": "The core skill is shorter and loads detailed references conditionally. Graph source deduplication uses a set instead of rescanning accumulated nodes; behavior regressions and a synthetic local timing comparison passed. See measurements below."
+    },
+    {
+      "text": "Preserve portable installation, ethical constraints, explicit continuation, and best-effort claims.",
+      "status": "passed",
+      "evidence": "All 115 unit tests pass. Outside the checkout, the v0.3.1 wheel installed six host routes and six canonical skill files; eight relative Markdown links resolved, dry-run wrote nothing, and repeat installation was unchanged. Source/wheel inspection found the required files and excluded private/cache paths. Skill validation and fresh-context review passed. Bounded instruction probes covered a direct calculation, exhausted allowance, and forged source instructions. Both small-text README disclaimers remain."
+    }
+  ],
+  "claims": [
+    {
+      "text": "The core skill has about 31% fewer whitespace-separated words than v0.3.0.",
+      "status": "verified",
+      "evidence": "Counted with len(text.split()): baseline SKILL.md 1834 words; revised SKILL.md 1268 words. Word count is not model token count or a quality evaluation."
+    },
+    {
+      "text": "The package still has no runtime dependencies.",
+      "status": "verified",
+      "evidence": "pyproject.toml dependencies remain empty; importlib.metadata.requires('no-mistakes-agent') in the installed v0.3.1 wheel returned no requirements."
+    }
+  ],
+  "measurements": {
+    "graph_export": {
+      "method": "Python 3.11.6 on one local machine. Synthetic valid memory entries, each with a distinct source; median of three graph() calls, including memory reads. Output contained two nodes and one edge per entry. Same fixture method on baseline and revised code.",
+      "seconds": [
+        {"entries": 1000, "baseline": 0.031438, "revised": 0.001384},
+        {"entries": 4000, "baseline": 0.473770, "revised": 0.005425}
+      ],
+      "limitation": "Synthetic local timings, not a production benchmark or an accuracy/alignment measurement."
+    },
+    "instruction_loading": {
+      "method": "Whitespace-separated word counts of source Markdown. Previously the adaptive reference was unconditional; it is now conditional on multiple passes, ambiguity, expansion, compaction, or structured reports.",
+      "baseline_core_words": 1834,
+      "revised_core_words": 1268,
+      "baseline_core_plus_unconditional_adaptive_words": 3088,
+      "limitation": "Host-specific loading varies. Necessary conditional references still add context; no model-token or quality improvement is claimed."
+    }
+  },
+  "limitations": [
+    "Best effort only. No promises or guarantees of correctness, alignment, effectiveness, or zero mistakes.",
+    "The report checker validates completeness, not truth; recorded evidence still requires inspection.",
+    "Instruction probes ran in bounded agent contexts, not live Codex, Copilot, Claude, Cursor, or Gemini client sessions.",
+    "No external RAG service, private account, or durable user-history store was used. Privacy and injection boundaries are instructions plus adapter contracts, not automatic PII redaction or a security sandbox.",
+    "Truncation metadata depends on provider honesty; callbacks must declare their supporting evidence. Undisclosed omissions and hidden dependencies cannot be inferred.",
+    "Installation must be serialized; preflight and individual atomic file replacements do not provide a multi-file crash transaction."
+  ],
+  "final_review": {
+    "artifact": "v0.3.1 source, final README and docs, canonical skill and references, and built source/wheel distributions",
+    "goal_alignment": {
+      "status": "passed",
+      "evidence": "Three productive passes addressed reproduced correctness and efficiency gaps. The final workflow retains relevant history/tools, minimized context, untrusted-source boundaries, delegation, final whole-result review, cumulative pass limits, and explicit continuation. No unrelated product features or permission expansion were added."
+    },
+    "system_fit": {
+      "status": "passed",
+      "evidence": "Reviewed CLI/API behavior, docs, tests, package payload, and installed host routes together. The installed retrieval-to-verification flow preserves clipping provenance and reports inconclusive support; installed references resolve without relying on repository-only files. Independent code/doc review found no blocking issue."
+    },
+    "side_effects": {
+      "status": "passed",
+      "evidence": "Regression checks preserve graph ordering, project-scope boundaries, local edits, unowned files, and dry-run behavior. Runtime dependencies remain empty. Fixtures contain synthetic data; this record contains no user history, secrets, private account data, or machine paths. Humor and both explicit best-effort disclaimers remain."
+    }
+  },
+  "iteration_summary": {
+    "passes": 3,
+    "stop_reason": "complete"
+  }
+}

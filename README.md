@@ -205,6 +205,9 @@ External retrieval requires a caller-supplied query sanitizer or reviewed query
 file. That is a privacy boundary, not a magic PII vacuum. Review the scope and returned
 source metadata too. Results preserve provider status and gaps; retrieval stays
 unverified, and a failing check cannot be outvoted by a cheerful one.
+Clipping labels survive evidence round trips. A passing check that cites clipped
+evidence stays inconclusive until the original support is checked. A paragraph
+does not become the whole document by putting on a fresh name tag.
 
 ## Memory, with an eraser
 
@@ -241,6 +244,10 @@ python3 -m unittest discover -s tests -v
 
 The [example report](docs/report.example.json) deliberately fails because nothing
 in it has been verified. It is our most honest demo.
+
+We also ran No Mistakes on itself: [the v0.3.1 review record](docs/self-review.report.json)
+documents three productive passes, the fixes, and their checks. The clipboard has
+become self-aware. It still cannot certify its own paperwork.
 
 | Exit code | Meaning |
 | --- | --- |

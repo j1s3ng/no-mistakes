@@ -31,6 +31,10 @@ outside its marked blocks are preserved. Repeating installation updates owned
 files only when their recorded hashes still match; conflicting or locally edited
 skill files require review instead of being silently replaced. Ownership hashes
 live in `.agents/skills/no-mistakes/.install-manifest.json`.
+Upgrades delete retired skill files only when their recorded hashes still match,
+and discard ownership records for retired files already missing. Dry runs list
+planned deletions. Unowned files, directories, and unselected host adapters remain
+in place; locally edited retired skill files block the upgrade before any writes.
 All targets are checked before writing; malformed routing markers, locally edited
 owned files, unowned adapter files, and symlinks below the chosen project root cause
 an input error. Installations should run serially. File replacement is atomic per
@@ -98,6 +102,9 @@ not configure those web apps. Without file/terminal access, the Python helper an
 local checks are unavailable; use supported tools and report the specific gap.
 In a noninteractive run, a stall or exhausted allowance returns `needs_input` and
 a compact checkpoint for the next turn instead of inventing consent to continue.
+That outer status describes the need for a reply; the structured
+`iteration_summary.stop_reason` records the cause, such as `pass_limit` for an
+exhausted allowance or `stalled` for a stalled pass.
 
 ## Other hosts and deterministic wrappers
 

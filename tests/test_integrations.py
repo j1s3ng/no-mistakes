@@ -174,6 +174,32 @@ class RetrievalTests(unittest.TestCase):
         result = retrieve(RetrievalRequest("private", "demo"), [CallableRetriever("default", forbidden)])
         self.assertEqual(result["gaps"][0]["reason"], "sanitization_required")
 
+    def test_evidence_preserves_valid_truncation_metadata(self):
+        full = item(text="Full excerpt")
+        self.assertEqual(full.original_chars, len(full.text))
+        self.assertIs(full.truncated, False)
+        clipped = item(text="Missing caveat", original_chars=40, truncated=True)
+        self.assertEqual(Evidence.from_dict(clipped.to_dict()), clipped)
+        self.assertEqual(clipped.to_dict()["original_chars"], 40)
+        self.assertIs(clipped.to_dict()["truncated"], True)
+
+    def test_inconsistent_or_invalid_truncation_metadata_is_rejected(self):
+        record = item(text="Fact").to_dict()
+        for metadata in (
+            {"original_chars": None}, {"original_chars": True},
+            {"original_chars": 4.5}, {"original_chars": "4"},
+            {"original_chars": 0}, {"original_chars": 3},
+            {"original_chars": 5, "truncated": False},
+            {"original_chars": 4, "truncated": True},
+            {"truncated": 1}, {"truncated": "false"},
+        ):
+            with self.subTest(metadata=metadata):
+                with self.assertRaises(ValueError):
+                    Evidence.from_dict({**record, **metadata})
+        with self.assertRaises(ValueError):
+            Evidence.from_dict({"id": "one", "text": "Fact", "source": "docs:1",
+                                "scope": "demo", "truncated": True})
+
 
 class VerificationTests(unittest.TestCase):
     def checker(self, name, verdict, refs=("one",)):
@@ -228,6 +254,29 @@ class VerificationTests(unittest.TestCase):
             CallableVerifier("broken", explode), self.checker("tests", "failed"),
         ])
         self.assertEqual(failed["verdict"], "failed")
+
+    def test_pass_referencing_truncated_evidence_is_inconclusive(self):
+        evidence = [item(text="Allowed.", original_chars=38, truncated=True)]
+        result = verify("Public deployment is allowed", evidence,
+                        [self.checker("terms", "passed")])
+        self.assertEqual(result["verdict"], "inconclusive")
+        self.assertEqual(result["checks"][0]["verdict"], "inconclusive")
+        self.assertEqual(result["checks"][0]["evidence_ids"], ["one"])
+        self.assertEqual(result["gaps"], [{"verifier": "terms", "reason": "truncated_evidence"}])
+
+    def test_truncation_does_not_hide_failure_or_block_independent_checks(self):
+        evidence = [item(text="Allowed.", original_chars=38, truncated=True)]
+        failed = verify("Public deployment is allowed", evidence,
+                        [self.checker("terms", "failed"), self.checker("calculation", "passed", ())])
+        self.assertEqual(failed["verdict"], "failed")
+        independent = verify("17 * 43 = 731", evidence,
+                             [self.checker("calculation", "passed", ())])
+        self.assertEqual(independent["verdict"], "passed")
+        self.assertEqual(independent["gaps"], [])
+        other = verify("Full excerpt supports this claim", evidence + [item("full")],
+                       [self.checker("full-source", "passed", ("full",))])
+        self.assertEqual(other["verdict"], "passed")
+        self.assertEqual(other["gaps"], [])
 
     def test_result_validation_and_immutable_reference_list(self):
         for verdict in ("verified", "true", True, None):

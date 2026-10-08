@@ -63,6 +63,8 @@ class Evidence:
     scope: str
     provider: str | None = None
     score: float | None = None
+    original_chars: int | None = None
+    truncated: bool = False
 
     def __post_init__(self) -> None:
         for field in ("id", "text", "source", "scope"):
@@ -74,20 +76,32 @@ class Evidence:
                     or not isinstance(self.score, (int, float))
                     or not math.isfinite(self.score)):
                 raise ValueError("score must be a finite number")
+        if self.original_chars is None:
+            object.__setattr__(self, "original_chars", len(self.text))
+        if type(self.original_chars) is not int or self.original_chars < len(self.text):
+            raise ValueError("original_chars must be an integer at least as large as the text")
+        if type(self.truncated) is not bool:
+            raise ValueError("truncated must be a bool")
+        if self.truncated != (self.original_chars > len(self.text)):
+            raise ValueError("truncated must match original_chars and the retained text length")
 
     def to_dict(self) -> dict[str, Any]:
         return {"id": self.id, "text": self.text, "source": self.source,
-                "scope": self.scope, "provider": self.provider, "score": self.score}
+                "scope": self.scope, "provider": self.provider, "score": self.score,
+                "original_chars": self.original_chars, "truncated": self.truncated}
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> Evidence:
         """Read the documented fields; provider-specific extra metadata is ignored."""
         if not isinstance(value, Mapping):
             raise ValueError("evidence must be an object")
+        if "original_chars" in value and type(value["original_chars"]) is not int:
+            raise ValueError("original_chars must be an integer")
         try:
             return cls(id=value["id"], text=value["text"], source=value["source"],
                        scope=value["scope"], provider=value.get("provider"),
-                       score=value.get("score"))
+                       score=value.get("score"), original_chars=value.get("original_chars"),
+                       truncated=value.get("truncated", False))
         except KeyError:
             raise ValueError("evidence is missing a required field") from None
 
@@ -166,9 +180,8 @@ def _retain_excerpts(envelope: dict[str, Any], selected: Sequence[Evidence],
             usage["omitted_items"] += 1
             envelope["gaps"].append({"provider": item.provider, "reason": "empty_excerpt"})
             continue
-        truncated = len(text) < len(item.text)
-        envelope["evidence"].append({**item.to_dict(), "text": text,
-                                     "original_chars": len(item.text), "truncated": truncated})
+        truncated = item.truncated or len(text) < len(item.text)
+        envelope["evidence"].append(replace(item, text=text, truncated=truncated).to_dict())
         statuses[item.provider]["accepted"] += 1
         usage["retained_text_chars"] += len(text)
         if truncated:
@@ -290,7 +303,8 @@ def retrieve(request: RetrievalRequest, retrievers: Sequence[Retriever],
         for item in candidates:
             key = (item.source, item.id, item.scope)
             previous = observed.setdefault(key, item)
-            if previous.text != item.text:
+            if (previous.text, previous.original_chars, previous.truncated) != (
+                    item.text, item.original_chars, item.truncated):
                 conflicts.add(key)
         batches[-1] = candidates
 
@@ -379,7 +393,8 @@ def verify(claim: str, evidence: Sequence[Evidence],
            verifiers: Sequence[Verifier]) -> dict[str, Any]:
     """Run declared checks; a failed check cannot be outvoted by passes.
 
-    Unknown/ambiguous evidence references and checker errors are inconclusive.
+    Unknown/ambiguous evidence references, passes relying on truncated evidence,
+    and checker errors are inconclusive.
     A passed result describes these callbacks, not a universal accuracy guarantee.
     """
     _nonempty(claim, "claim")
@@ -387,6 +402,7 @@ def verify(claim: str, evidence: Sequence[Evidence],
     if any(not isinstance(item, Evidence) for item in items):
         raise ValueError("evidence must contain Evidence objects")
     available_ids = {item.id for item in items}
+    truncated_ids = {item.id for item in items if item.truncated}
     if len(available_ids) != len(items):
         raise ValueError("verification evidence IDs must be unique")
     checkers = tuple(verifiers)
@@ -418,6 +434,12 @@ def verify(claim: str, evidence: Sequence[Evidence],
                                        "evidence_ids": []})
             envelope["gaps"].append({"verifier": checker.name, "reason": problem})
         else:
+            if result.verdict == "passed" and truncated_ids.intersection(result.evidence_ids):
+                result = VerificationResult(
+                    "inconclusive", "Supporting evidence is truncated; inspect its original source.",
+                    result.evidence_ids,
+                )
+                envelope["gaps"].append({"verifier": checker.name, "reason": "truncated_evidence"})
             envelope["checks"].append({"name": checker.name, "status": "ok", **result.to_dict()})
     verdicts = [check["verdict"] for check in envelope["checks"]]
     if "failed" in verdicts:

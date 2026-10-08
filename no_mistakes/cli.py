@@ -25,12 +25,16 @@ def read_memory(root):
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, list):
         raise ValueError("Memory must be a JSON array")
+    ids = set()
     for entry in data:
         if not isinstance(entry, dict):
             raise ValueError("Memory entries must be objects")
         for field in ("id", "text", "source", "scope", "kind", "created_at"):
             if not isinstance(entry.get(field), str) or not entry[field].strip():
                 raise ValueError(f"Memory entry requires a nonempty {field}")
+        if entry["id"] in ids:
+            raise ValueError("Memory entry IDs must be unique")
+        ids.add(entry["id"])
         if entry["kind"] not in ("explicit", "confirmed", "inferred"):
             raise ValueError("Memory entry has an invalid kind")
         for field in ("supersedes", "superseded_by"):
@@ -54,13 +58,20 @@ def write_memory(root, entries):
 
 
 def remember(root, text, source, scope, kind, supersedes=None):
-    if not all(value.strip() for value in (text, source, scope)):
-        raise ValueError("Text, source, and scope must be nonempty")
+    for field, value in (("text", text), ("source", source), ("scope", scope)):
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{field} must be a nonempty string")
+    if kind not in ("explicit", "confirmed", "inferred"):
+        raise ValueError("kind must be explicit, confirmed, or inferred")
+    if supersedes is not None and (not isinstance(supersedes, str) or not supersedes.strip()):
+        raise ValueError("supersedes must be a nonempty memory ID")
     entries = read_memory(root)
     if supersedes:
         prior = next((e for e in entries if e["id"] == supersedes), None)
         if prior is None or prior.get("superseded_by"):
             raise ValueError("Correction requires an existing active entry")
+        if prior["scope"] != scope:
+            raise ValueError("Correction must remain in the original scope")
     item = dict(id=uuid.uuid4().hex, text=text, source=source, scope=scope,
                 kind=kind, created_at=datetime.now(timezone.utc).isoformat())
     if supersedes:
@@ -167,11 +178,13 @@ def graph(root):
     entries = read_memory(root)
     nodes = []
     edges = []
+    source_ids = set()
     for item in entries:
         nodes.append({**item, "type": "intent"})
         source_id = "source:" + item["source"]
-        if not any(n["id"] == source_id for n in nodes):
+        if source_id not in source_ids:
             nodes.append({"id": source_id, "type": "source", "text": item["source"]})
+            source_ids.add(source_id)
         edges.append({"from": item["id"], "to": source_id,
                       "relation": "supported_by", "basis": item["kind"]})
         if item.get("supersedes"):

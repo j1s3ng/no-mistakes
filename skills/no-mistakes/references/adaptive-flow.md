@@ -122,6 +122,9 @@ integer within the authorized allowance) and
 together with all other evidence and final-review requirements. A task that finishes
 at an allowance boundary still uses `complete`; unresolved work waiting for
 continuation uses `pass_limit`.
+In a noninteractive host, the outer status may be `needs_input` while the structured
+stop reason remains `pass_limit`; they describe the reply requirement and cause,
+respectively. Preserve other actual causes such as `stalled` or `context_limit`.
 
 The default allowance is ten. For approved extensions, add `continuations`, a list
 of records with `additional_passes` (integer 1–10) and `approval` (a nonempty minimal

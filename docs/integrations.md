@@ -44,13 +44,19 @@ candidates; `candidate_limit` records a reduced limit or an oversized provider r
 This bounds helper processing after retrieval, not a callback's own allocation,
 runtime, or network response. Keep backend limits and timeouts too.
 
-Evidence keeps exact IDs/source references and adds `original_chars` and `truncated`.
+Evidence keeps exact IDs/source references and records `original_chars` and `truncated`.
+Those fields survive `Evidence.from_dict()`, `to_dict()`, and later retrieval passes.
+Further clipping retains the original count and never clears an inherited truncation
+flag. Without supplied metadata, a new `Evidence` treats its supplied text as complete;
+the helper cannot detect a backend's undisclosed omissions or authenticate its counts.
 `context_budget` records limits, retained text characters, and counts of clipped or
 omitted selected items. Provider `accepted` counts describe emitted items. Clipping
 adds `excerpt_truncated`; omitted items after the total budget is spent add
 `text_budget_exhausted`. An all-whitespace clipped prefix is omitted with
 `empty_excerpt`. These gaps deliberately produce CLI exit code 1. Conflicting
 original texts are checked **before** clipping, even if their retained prefixes match.
+Contradictory truncation metadata for the same source/chunk is also an
+`evidence_conflict`, rather than silently selecting the version labeled complete.
 
 Clipping keeps a prefix, without judging relevance or removing malicious instructions.
 Reopen the original source or request a narrower passage when a missing caveat could
@@ -93,6 +99,13 @@ optional finite number. `provider` is stamped by the adapter. Use stable namespa
 chunk IDs and resolvable source references. Provider-specific extra fields are
 ignored. Put a thin route in front of an existing vector database/graph index if its
 response schema differs; or use a Python callback below.
+
+If a backend already clipped an excerpt, include `original_chars` (the original
+excerpt's character count) and `truncated: true`. Counts must be integers at least
+the length of `text`; the flag must be a boolean and exactly match whether the count
+exceeds that length. Inconsistent metadata is rejected. Existing responses without
+either field remain supported. These fields describe excerpt clipping, not whether
+the excerpt covers the entire source or establishes a claim.
 
 Prepare a minimized query locally and review all outbound fields. For this public,
 synthetic example:
@@ -207,6 +220,12 @@ schema validation, citation inspection, or an independent review. The runnable
 Callback results use `passed`, `failed`, or `inconclusive`, a summary, and supporting
 evidence IDs when applicable. Unknown/ambiguous IDs are rejected. A failed check
 keeps the overall verdict failed; missing or errored checks prevent an overall pass.
+An attempted pass that explicitly cites truncated evidence becomes `inconclusive`
+with a `truncated_evidence` gap. Reopen the source and supply complete supporting
+evidence before trying again. Failures remain failures; independent checks with no
+evidence references, such as the example's arithmetic calculation, can still pass.
+The helper relies on callbacks to declare their actual supporting evidence IDs and
+cannot detect hidden dependencies or a checker that omits references.
 The verdict reports callback outcomes, not independent proof that the callbacks or
 claims are correct. A second model's favorable opinion is advisory evidence.
 

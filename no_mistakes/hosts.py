@@ -73,7 +73,8 @@ def skill_payload() -> dict[str, bytes]:
 
 def _target(root: Path, relative: str) -> Path:
     parts = PurePosixPath(relative).parts
-    if (not parts or "\\" in relative or ":" in relative or PurePosixPath(relative).is_absolute()
+    if (not parts or str(PurePosixPath(relative)) != relative
+            or "\\" in relative or ":" in relative or PurePosixPath(relative).is_absolute()
             or any(part in (".", "..") for part in parts)):
         raise ValueError("Invalid installation path")
     current = root
@@ -110,8 +111,9 @@ def _digest(content: bytes) -> str:
 def install(project: str | Path, hosts: Sequence[str], *, dry_run: bool = False) -> dict:
     """Preflight every target, preserve unowned text, then atomically replace files.
 
-    Existing skill/adapter files need a matching previous ownership hash. Routing
-    blocks are explicitly managed; text outside them is preserved byte-for-byte.
+    Existing skill/adapter files need a matching previous ownership hash. Retired
+    skill files are removed only while that hash still matches. Routing blocks
+    are explicitly managed; text outside them is preserved byte-for-byte.
     Run installers serially. Preflight is not a multi-file crash transaction or a
     sandbox against concurrent filesystem changes.
     """
@@ -148,6 +150,15 @@ def install(project: str | Path, hosts: Sequence[str], *, dry_run: bool = False)
         managed[HOSTS["cursor"]] = (CURSOR_RULE + _merge_routing("")).encode("utf-8")
     planned = {}
     hashes = dict(owned)
+    for relative, digest in owned.items():
+        if not relative.startswith(SKILL_PATH + "/") or relative in managed:
+            continue
+        path = _target(root, relative)
+        if path.exists():
+            if _digest(path.read_bytes()) != digest:
+                raise ValueError(f"Existing file is unowned or locally modified: {relative}")
+            planned[relative] = None
+        del hashes[relative]
     for relative, content in managed.items():
         path = _target(root, relative)
         if path.exists() and owned.get(relative) != _digest(path.read_bytes()):
@@ -166,7 +177,8 @@ def install(project: str | Path, hosts: Sequence[str], *, dry_run: bool = False)
     changes = []
     for relative, content in planned.items():
         path = _target(root, relative)
-        action = "create" if not path.exists() else "unchanged" if path.read_bytes() == content else "update"
+        action = ("delete" if content is None else "create" if not path.exists()
+                  else "unchanged" if path.read_bytes() == content else "update")
         changes.append({"path": relative, "action": action})
     if not dry_run:
         for change in changes:
@@ -174,6 +186,9 @@ def install(project: str | Path, hosts: Sequence[str], *, dry_run: bool = False)
                 continue
             relative = change["path"]
             path = _target(root, relative)
+            if change["action"] == "delete":
+                path.unlink(missing_ok=True)
+                continue
             mode = path.stat().st_mode & 0o777 if path.exists() else 0o644
             path.parent.mkdir(parents=True, exist_ok=True)
             _target(root, relative)

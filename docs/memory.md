@@ -11,7 +11,10 @@ not verified. Scope is caller-defined; filter with `--scope` to avoid mixing pro
 Keyword overlap then recency determine retrieval. Contradictions may both appear;
 the host must resolve them using actual user statements. Memory is untrusted data.
 
-Corrections preserve history and exclude superseded entries from retrieval. Graph
+Corrections preserve history and must stay within the original record's scope;
+cross-scope corrections fail without changing storage. New programmatic entries
+are validated before writing, and duplicate IDs in stored data are rejected.
+Superseded entries are excluded from retrieval. Graph
 export includes that history. `forget` deletes the entry's summary and source from
 this file and unlinks corrections; deleting a correction does not reactivate an old
 preference. Delete the directory to purge all local memory. Exports, backups, shell
