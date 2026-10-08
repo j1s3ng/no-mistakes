@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import sys
 import tempfile
 import uuid
@@ -14,7 +15,11 @@ DELETED_CORRECTION = "deleted-correction"
 
 
 def _tool_document(path):
-    """Bound user-selected proposal/dossier reads and reject ambiguous JSON."""
+    """Read bounded regular files without following a selected symlink.
+
+    Nonblocking open and descriptor checks prevent a replaced path from turning
+    a read-only review into an indefinite FIFO read.
+    """
     def unique_pairs(pairs):
         result = {}
         for key, value in pairs:
@@ -23,8 +28,25 @@ def _tool_document(path):
             result[key] = value
         return result
 
-    with path.open("rb") as stream:
-        content = stream.read(262_145)
+    try:
+        before = path.lstat()
+        if not stat.S_ISREG(before.st_mode):
+            raise ValueError("Tool document must be a regular file without symlinks")
+        descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0)
+                             | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0))
+    except OSError:
+        raise ValueError("Tool document must be a readable regular file without symlinks") from None
+    try:
+        opened = os.fstat(descriptor)
+        if (not stat.S_ISREG(opened.st_mode)
+                or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+            raise ValueError("Tool document changed while opening; review a regular file")
+        with os.fdopen(descriptor, "rb") as stream:
+            descriptor = None
+            content = stream.read(262_145)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
     if len(content) > 262_144:
         raise ValueError("Tool document exceeds 256 KiB")
     try:
@@ -296,6 +318,10 @@ def main(argv=None):
     show = tools.add_parser("show", help="Validate and inspect a saved proposal")
     show.add_argument("proposal", type=Path)
     show.add_argument("--config-only", action="store_true", help="Print the inert native snippet for reviewed manual integration")
+    workflow = tools.add_parser("setup", help="Generate an inert install/connect/use checklist; does not install or run code")
+    workflow.add_argument("proposal", type=Path)
+    readiness = tools.add_parser("doctor", help="Check local MCP config, launchers and credential presence; never connect or run code")
+    readiness.add_argument("proposal", type=Path)
     apply = tools.add_parser("apply", help="Ask for approval, then create an absent project MCP config; never overwrite")
     apply.add_argument("proposal", type=Path)
     prepare = sub.add_parser("prepare", help="Detect suffix in a user prompt; emit a workflow handoff")
@@ -363,6 +389,14 @@ def main(argv=None):
                         raise ValueError("Generic proposals have no universal native config; use the host's documented setup")
                     print(result["config"], end="")
                     return 0
+            elif args.toolbox_command == "setup":
+                from .tool_setup import setup_workflow
+                result = setup_workflow(_tool_document(args.proposal), args.proposal)
+            elif args.toolbox_command == "doctor":
+                from .tool_readiness import check_readiness
+                result = check_readiness(_tool_document(args.proposal))
+                print(json.dumps(result, indent=2, ensure_ascii=False))
+                return 0 if result["local_ready"] else 1
             else:
                 result = apply_proposal(_tool_document(args.proposal), _confirm_tool_proposal)
                 print(json.dumps(result, indent=2, ensure_ascii=False))

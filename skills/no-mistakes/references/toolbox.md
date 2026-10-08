@@ -7,8 +7,8 @@ hypotheses about likely needs, not inferred permission or measured coverage.
 Do not load every MCP schema or start every server for routine work.
 
 The optional helper provides `toolbox list`, `inspect`, `recommend`, `plan`, `show`,
-and `apply`; use `--help` for arguments. The core package does not contain browsers,
-third-party servers, SDKs, or account credentials. A standard recipe is a curated
+`setup`, `doctor` and `apply`; use `--help` for arguments. The core package does not
+contain browsers, third-party servers, SDKs, or account credentials. A standard recipe is a curated
 option, never automatic installation consent. Compare an existing CLI/skill when it
 fits better; Playwright's maintainers explicitly discuss that choice for coding agents.
 
@@ -58,16 +58,48 @@ config. Host permissions still apply; a terminal prompt/hash is not a security s
 
 ## Check what actually became available
 
-Native config may cause a host to download/run packages or contact a service when
-loaded, even without another host trust dialog. Authenticate using the host's secure
-mechanism, preserve its approvals, and limit account/repository/filesystem access at
-the actual provider/process boundary. A prose scope field is not an enforced ACL.
+Before approval, generate `toolbox setup PLAN` for the digest-bound inert checklist
+and run `toolbox doctor PLAN` for local observations. A missing config is expected
+at this stage. The doctor checks config bytes, launcher and named credential presence;
+it never launches a command, checks a runtime version, contacts a service or validates
+browser/authentication state. Do not substitute a host health command before approval:
+it may start a process or make a request. Setup guidance reuses the research record;
+it does not inspect current owner docs or renew an expired review.
 
-After approval and connection, use the host's real status/tool listing, inspect
-advertised capabilities, and perform one bounded relevant read-only/local smoke
-check. Do not test account access by sending messages or changing production data.
-Record configured, authenticated, available, tested and inconclusive separately;
-rendering a file proves none of those later states. Stop on unexpected permissions,
-unavailable authentication or failed progress and report the specific gap. To remove
-access, disconnect the server and revoke credentials as appropriate; deleting config
-alone does not stop every process, erase provider data or revoke account grants.
+After the user's decision and approved config creation/manual merge, follow the
+selected host's setup checklist. Native config may download/run an `npx` package or
+contact an HTTP service when loaded, even without another trust dialog. Use the
+host's actual restart/start mechanism, status and tool listing. Authenticate through
+the host's secure mechanism, preserving approvals and limiting account, repository
+and filesystem access at the actual provider/process boundary. A prose scope is not
+an enforced ACL. A PAT recipe needs its named secret in the host environment;
+`mcp login` is not a universal replacement for provider-specific authentication.
+
+Perform one bounded local/read-only smoke check with a known expected result. For
+Playwright, use an approved local fixture: navigate, inspect a bounded snapshot,
+click an observed button target, verify the expected changed status, inspect console
+errors, then close the browser. Use the actual advertised schemas; avoid arbitrary
+server-code execution. Serve only the fixture directory on loopback with an unused
+port, and stop that server afterward. The checkout includes
+`examples/mcp-browser-smoke.html`; installed skill/wheel users can use their own
+local fixture. Do not test account access by posting or changing production data.
+
+A browser failure needs an inspected repair, not an automatic download. Playwright
+MCP v0.0.83 supports the CLI `install-browser` subcommand, not a documented
+`browser_install` MCP tool. Its matching Chrome installer is
+`npx -y @playwright/mcp@0.0.83 install-browser chrome`; separately obtain approval
+before running it. Chrome installation can replace the OS-wide browser and require
+elevated access. Do not use an unpinned standalone Playwright installer to repair
+versioned binaries. [Pinned source](https://github.com/microsoft/playwright-mcp/blob/v0.0.83/cli.js),
+[browser limits](https://playwright.dev/docs/browsers#installing-google-chrome--microsoft-edge).
+
+Use the new capability for the task's actual acceptance criteria after smoke succeeds.
+Retain a concise expected-versus-observed result and reassess it against original
+intent and surrounding behavior in the final big-picture review. Keep configured,
+authenticated, available, tested and inconclusive as separate observations: config
+bytes, launcher presence or cached tool schemas do not prove successful execution.
+Stop on unexpected permissions, missing prerequisites, failed authentication, tool
+mismatch, failed checks or stalled progress; report the stage and concrete repair
+without retrying unchanged or widening access. To remove access, close sessions,
+disconnect the server and revoke credentials as appropriate; deleting config alone
+does not stop every process, erase provider data or revoke account grants.

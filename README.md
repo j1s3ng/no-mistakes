@@ -231,6 +231,8 @@ has zero runtime dependencies. “Standard” is a recommendation, not a permiss
 no-mistakes toolbox plan --tool playwright --host codex --project . \
   --reason 'Verify the local UI' --scope 'This project and local test page only' > /tmp/tool-plan.json
 no-mistakes toolbox show /tmp/tool-plan.json
+no-mistakes toolbox setup /tmp/tool-plan.json
+no-mistakes toolbox doctor /tmp/tool-plan.json
 no-mistakes toolbox apply /tmp/tool-plan.json
 ```
 
@@ -241,6 +243,18 @@ start/download the server when it loads that file, so approval precedes configur
 Existing configs require a reviewed manual merge. Recipes disclose permissions,
 data flow, costs, research dates and removal steps. Stale research blocks application.
 
+`setup` prints the full install/connect/use checklist, including host-specific status
+steps and a real behavior check. `toolbox doctor` inspects local config, executable
+availability and named credential presence without starting anything. Missing config
+before `apply` is expected. A green local check still leaves connection, authentication
+and behavior to verify through the host. The clipboard cannot click its own button.
+
+After approval, the host downloads/launches the pinned local package or connects to
+the remote service. Inspect its actual tools, run the bounded smoke check, then use
+the capability against the task's acceptance criteria and final big-picture review.
+The [browser fixture](examples/mcp-browser-smoke.html) gives Playwright a button with
+one job. Additional browser/system downloads need their own covered approval.
+
 For an extra MCP, research its primary owner docs and use `--spec` with a custom
 dossier. The helper checks the paperwork; the host must inspect the facts and ask
 the user before enabling it. See the [toolbox guide](docs/toolbox.md) for host formats,
@@ -248,6 +262,7 @@ examples, custom-server fields and actual limits. The Swiss army knife is expand
 The tiny lawyer remains permanently unfolded.
 The [v0.5.0 review](docs/toolbox-review.md) records the actual tests, a caught
 version-mismatch defect, consent failure checks and untested integration limits.
+The [setup workflow review](docs/mcp-setup-review.md) records the follow-up checks.
 
 ## Plug in more receipts
 

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No Mistakes MCP smoke</title>
+<h1>A button with one job</h1>
+<p>No accounts, no external requests, just a tiny receipt.</p>
+<button type="button" id="verify">Verify browser</button>
+<p id="status" role="status">Pending</p>
+<script>
+document.getElementById('verify').addEventListener('click', () => {
+  document.getElementById('status').textContent = 'Verified: browser interaction worked.';
+});
+</script>
+</html>

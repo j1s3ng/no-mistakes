@@ -16,6 +16,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import unicodedata
 from urllib.parse import urlsplit
 import uuid
@@ -282,7 +283,7 @@ def _native(tools: list[dict], host: str) -> str | None:
         connection = tool["connection"]
         entry = {}
         if connection["transport"] == "stdio":
-            if host in ("claude", "copilot-vscode", "copilot-cli"):
+            if host in ("claude", "cursor", "copilot-vscode", "copilot-cli"):
                 entry["type"] = "stdio"
             entry["command"] = connection["command"]
             entry["args"] = connection["args"]
@@ -291,7 +292,7 @@ def _native(tools: list[dict], host: str) -> str | None:
             if env:
                 entry["env"] = env
         else:
-            if host in ("claude", "copilot-vscode"):
+            if host in ("claude", "cursor", "copilot-vscode"):
                 entry["type"] = "http"
             entry["httpUrl" if host == "gemini" else "url"] = connection["url"]
             headers = dict(connection["headers"])
@@ -381,8 +382,11 @@ def _snapshot(root: Path, relative: str, expected: bytes) -> tuple[list[tuple], 
     if not root.is_dir():
         raise ValueError("project must remain an existing directory")
     if target.exists():
-        descriptor = os.open(target, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        descriptor = os.open(target, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                             | getattr(os, "O_NONBLOCK", 0))
         with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("Configuration must remain a regular file")
             same = stream.read(len(expected) + 1) == expected
         if not same:
             raise ValueError(f"Existing {relative} differs; manually merge the reviewed config. "

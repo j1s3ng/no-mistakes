@@ -38,7 +38,7 @@ jobs:
           for directory, patterns in {
               "docs": ("*.md", "*.json"),
               "skills/no-mistakes": ("*.md",),
-              "examples": ("*.py",),
+              "examples": ("*.py", "*.html"),
               "evals": ("*.json",),
               "tests": ("*.py",),
               "no_mistakes": ("*.py",),
@@ -109,6 +109,46 @@ jobs:
           assert example["retrieval"]["verified"] is False
           assert example["correct_calculation"]["verdict"] == "passed"
           assert example["incorrect_calculation"]["verdict"] == "failed"
+          PY
+      - name: Exercise installed MCP setup without launching third-party code
+        working-directory: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          from datetime import date
+          import json
+          from pathlib import Path
+          import subprocess
+          import tempfile
+          from no_mistakes.tool_catalog import get_tool
+          from no_mistakes.toolbox import build_proposal, apply_proposal
+
+          with tempfile.TemporaryDirectory() as temporary:
+              root = Path(temporary)
+              project = root / "project"
+              project.mkdir()
+              tool = get_tool("openai-docs")
+              tool["id"] = "synthetic-docs"
+              tool["name"] = "Synthetic packaging fixture; not a live connection"
+              tool["review"]["checked_on"] = date.today().isoformat()
+              tool["review"]["source_urls"] = ["https://example.com/synthetic-docs"]
+              tool["connection"]["url"] = "https://example.com/mcp"
+              proposal = build_proposal([tool], "claude", project, "Synthetic smoke", "Temporary fixture only")
+              saved = root / "plan.json"
+              saved.write_text(json.dumps(proposal), encoding="utf-8")
+              setup = subprocess.run(["no-mistakes", "toolbox", "setup", str(saved)], check=True, capture_output=True, text=True)
+              assert json.loads(setup.stdout)["digest"] == proposal["digest"]
+              before = subprocess.run(["no-mistakes", "toolbox", "doctor", str(saved)], capture_output=True, text=True)
+              assert before.returncode == 1
+              assert json.loads(before.stdout)["config"]["status"] == "missing"
+              assert list(project.iterdir()) == []
+              # Test-only callback in an isolated fixture. No host loads this file.
+              assert apply_proposal(proposal, lambda _: True)["status"] == "created"
+              after = subprocess.run(["no-mistakes", "toolbox", "doctor", str(saved)], check=True, capture_output=True, text=True)
+              observed = json.loads(after.stdout)
+              assert observed["local_ready"] is True
+              assert observed["tools"][0]["runtime_status"] == "not_checked"
+              assert observed["tools"][0]["authentication_status"] == "not_checked"
+              assert observed["tools"][0]["smoke_status"] == "not_run"
           PY
       - name: Exercise installed host setup outside checkout
         working-directory: ${{ runner.temp }}
