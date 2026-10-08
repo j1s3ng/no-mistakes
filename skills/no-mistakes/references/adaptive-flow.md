@@ -7,6 +7,10 @@ when material ambiguity prevents implementation. Tool calls, subtasks, and paral
 reviews are work inside a pass, not separate opportunities to reset the budget.
 The parent owns the cumulative pass ledger and stops dispatch at the authorized
 boundary. All workers share the same task constraints and resource allowance.
+Workers explicitly load the full skill for their chunks through trusted parent
+assignments. Their alignment/research/execution/check/review substeps stay inside
+the root's current pass; they do not start independent ten-pass loops. A descendant
+inherits the same cumulative ledger and only its allocated remaining resources.
 
 ## Choose a small initial budget
 

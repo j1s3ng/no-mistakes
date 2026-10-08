@@ -1,0 +1,29 @@
+{
+  "root_goal": "Make the public submit operation survive one transient timeout without changing its API.",
+  "task": "Investigate the retry helper and its public caller. Report the cause and evidence; do not change parent-owned integration code.",
+  "acceptance": [
+    "Reproduce the public operation's expected-versus-observed behavior.",
+    "Identify the smallest supported correction and verify whether it lies inside this worker's ownership.",
+    "Review the scoped findings against the root goal and relevant interfaces."
+  ],
+  "constraints": [
+    "Preserve the public signature and canonical tests.",
+    "No publication, third-party installation, external services, persistent memory or account access.",
+    "Return evidence in the response; the parent owns saved review artifacts."
+  ],
+  "context": [
+    {
+      "text": "The public operation fails after a transient timeout; relevant source and tests are available in the project.",
+      "source": "Synthetic user task; inspect the local fixture to confirm the cause",
+      "kind": "explicit"
+    }
+  ],
+  "owned_paths": [],
+  "allowed_effects": [
+    "Read this synthetic project and run its existing local Python checks without modifying files."
+  ],
+  "parent_pass": 1,
+  "parent_status": "in_progress",
+  "continuations": [],
+  "child_slots": 0
+}

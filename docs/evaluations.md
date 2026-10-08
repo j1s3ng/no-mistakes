@@ -83,6 +83,15 @@ Behavior cases may use explicit loading to isolate execution from discovery.
 Passing one condition cannot substitute for the other. Compare substantive task
 outcomes, not whether the baseline uses the skill's terminology.
 
+For [worker-flow inheritance](worker-flow.md), dispatch a fresh worker through the
+host's real assignment mechanism with the full-skill invocation and minimized
+`worker-brief` packet, without adding a suffix. Check the public task outcome,
+ownership, evidence handoff, shared root budget and parent integration separately.
+Brief generation is a helper check; a worker saying it loaded the skill does not
+replace a loading trace. Preserve source/approval boundaries through the handoff.
+Keep parent-only rubrics outside worker context, and do not count the evaluator's
+session permissions as authorization inside a synthetic checkpoint.
+
 ## Evidence and bounded improvement
 
 Grade evidence against the original acceptance conditions and explicit constraints.

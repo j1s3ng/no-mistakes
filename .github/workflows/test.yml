@@ -188,6 +188,45 @@ jobs:
 
           compare(bundled, installed)
           PY
+      - name: Exercise installed worker handoff without spawning models
+        working-directory: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+          import tempfile
+          from no_mistakes.hosts import install
+
+          spec = json.loads((Path(os.environ["GITHUB_WORKSPACE"]) / "docs/worker-brief.example.json").read_text())
+          with tempfile.TemporaryDirectory() as temporary:
+              root = Path(temporary)
+              project = root / "project"
+              project.mkdir()
+              saved = root / "assignment.json"
+              saved.write_text(json.dumps(spec), encoding="utf-8")
+              command = ["no-mistakes", "worker-brief", str(saved), "--project", str(project)]
+              missing = subprocess.run(command, check=True, capture_output=True, text=True)
+              packet = json.loads(missing.stdout)
+              assert packet["skill_path"] is None
+              assert packet["budget"]["fresh_child_passes"] == 0
+              assert packet["return_contract"]["status"] == "pending"
+              assert list(project.iterdir()) == []
+              install(project, ["generic"])
+              before = {str(path): path.read_bytes() for path in project.rglob("*") if path.is_file()}
+              loaded = subprocess.run(command, check=True, capture_output=True, text=True)
+              packet = json.loads(loaded.stdout)
+              assert Path(packet["skill_path"]).is_file()
+              assert packet["return_contract"]["final_review"]["status"] == "not_run"
+              assert packet["return_contract"]["integration_status"] == "parent_review_required"
+              spec["parent_pass"] = 11
+              saved.write_text(json.dumps(spec), encoding="utf-8")
+              rejected = subprocess.run(command, capture_output=True, text=True)
+              assert rejected.returncode == 2 and rejected.stdout == ""
+              after = {str(path): path.read_bytes() for path in project.rglob("*") if path.is_file()}
+              assert before == after
+          PY
       - name: Inspect installed setup without changing it
         working-directory: ${{ runner.temp }}
         run: |

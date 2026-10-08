@@ -92,11 +92,28 @@ areas, targeted checks, and review. Each chunk gets an owner, dependencies, a cl
 deliverable, and evidence to bring back. Agents receive only the relevant sanitized
 context and the permissions the task already has.
 
+Every worker explicitly loads the full No Mistakes skill: align, research, execute,
+verify, and review its chunk against the root goal. Descendants get the same flow
+and a smaller allocation, not a complimentary ten-loop punch card. Relevant tools
+are available to use when the host actually exposes them; imaginary MCPs remain
+in the imaginary drawer.
+
 The parent coordinates shared changes, integrates results, and reviews the whole
 thing. Workers share the pass allowance and continuation rules. Four agents editing
 the same line is a merge-conflict subscription, so shared files and memory keep one
 writer. If agents are unavailable, the host works through the same chunks itself.
 The Python helper hands off this policy; it does not launch model workers.
+
+```sh
+no-mistakes worker-brief docs/worker-brief.example.json --project .
+```
+
+This creates an inert assignment with the skill location, shared budget and a
+pending evidence template. The parent reviews it and sends it through the host's
+agent mechanism, then inspects the actual result before integration.
+See the [worker-flow guide](docs/worker-flow.md) for the handoff and return contract.
+The [worker-flow review](docs/worker-flow-review.md) records helper tests, fault
+checks, fresh-worker outcomes and the limits of the available traces.
 
 See [parallel-work guidance](skills/no-mistakes/references/parallel-work.md).
 

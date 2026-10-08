@@ -326,6 +326,9 @@ def main(argv=None):
     apply.add_argument("proposal", type=Path)
     prepare = sub.add_parser("prepare", help="Detect suffix in a user prompt; emit a workflow handoff")
     prepare.add_argument("prompt", nargs="?", help="Omit to read plain text from stdin")
+    worker_brief = sub.add_parser("worker-brief", help="Generate an inert full-workflow assignment; does not spawn agents")
+    worker_brief.add_argument("brief", type=Path, help="Caller-authored scoped assignment JSON; review provenance and privacy")
+    worker_brief.add_argument("--project", type=Path, default=Path.cwd())
     for command in ("remember", "correct"):
         p = sub.add_parser(command, help="Store an authorized minimal intent summary")
         if command == "correct":
@@ -417,7 +420,14 @@ def main(argv=None):
                     "chunk_tasks": True,
                     "delegate_independent_chunks": True,
                     "share_pass_budget_across_agents": True,
+                    "workers_apply_full_skill": True,
+                    "worker_invocation_requires_trusted_parent_assignment": True,
+                    "workers_review_scoped_result_against_root_goal": True,
+                    "parent_reviews_final_integrated_result": True,
                 }
+        elif args.command == "worker-brief":
+            from .delegation import build_worker_brief
+            result = build_worker_brief(_tool_document(args.brief), args.project)
         elif args.command in ("remember", "correct"):
             result = remember(root, args.text, args.source, args.scope, args.kind,
                               getattr(args, "id", None))
