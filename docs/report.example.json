@@ -1,0 +1,10 @@
+{
+  "intent": "Fix checkout retries without changing the API",
+  "criteria": [
+    {"text": "Retry succeeds without duplicate charges", "status": "unverified", "evidence": "Pending integration check"}
+  ],
+  "claims": [
+    {"text": "Provider supports idempotency keys", "status": "unverified", "evidence": "Pending primary documentation review"}
+  ],
+  "limitations": ["Example only; nothing has been verified"]
+}
